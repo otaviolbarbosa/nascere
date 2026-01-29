@@ -1,26 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createAppointmentSchema, type CreateAppointmentInput } from "@/lib/validations/appointment"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  createAppointmentSchema,
+  type CreateAppointmentInput,
+} from "@/lib/validations/appointment";
 
 export default function NewAppointmentPage() {
-  const params = useParams()
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const params = useParams();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const patientId = params.id as string
+  const patientId = params.id as string;
 
   const form = useForm<CreateAppointmentInput>({
     resolver: zodResolver(createAppointmentSchema),
@@ -33,29 +49,29 @@ export default function NewAppointmentPage() {
       location: "",
       notes: "",
     },
-  })
+  });
 
   async function onSubmit(data: CreateAppointmentInput) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erro ao criar agendamento")
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao criar agendamento");
       }
 
-      toast.success("Agendamento criado com sucesso!")
-      router.push(`/patients/${patientId}/appointments`)
+      toast.success("Agendamento criado com sucesso!");
+      router.push(`/patients/${patientId}/appointments`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar agendamento")
+      toast.error(error instanceof Error ? error.message : "Erro ao criar agendamento");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -169,7 +185,12 @@ export default function NewAppointmentPage() {
             />
 
             <div className="flex gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+                disabled={isLoading}
+              >
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
@@ -181,5 +202,5 @@ export default function NewAppointmentPage() {
         </Form>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod";
 
 export const createPatientSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -15,9 +15,9 @@ export const createPatientSchema = z.object({
   }),
   address: z.string().optional(),
   observations: z.string().optional(),
-})
+});
 
-export const updatePatientSchema = createPatientSchema.partial()
+export const updatePatientSchema = createPatientSchema.partial();
 
-export type CreatePatientInput = z.infer<typeof createPatientSchema>
-export type UpdatePatientInput = z.infer<typeof updatePatientSchema>
+export type CreatePatientInput = z.infer<typeof createPatientSchema>;
+export type UpdatePatientInput = z.infer<typeof updatePatientSchema>;

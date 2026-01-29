@@ -1,51 +1,65 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Loader2, ArrowLeft } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useAuth } from "@/hooks/use-auth";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Email inválido"),
-})
+});
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const { resetPassword } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
+  const { resetPassword } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
     },
-  })
+  });
 
   async function onSubmit(data: ForgotPasswordFormData) {
-    setIsLoading(true)
-    const { error } = await resetPassword(data.email)
+    setIsLoading(true);
+    const { error } = await resetPassword(data.email);
 
     if (error) {
       toast.error("Erro ao enviar email", {
         description: error.message,
-      })
-      setIsLoading(false)
-      return
+      });
+      setIsLoading(false);
+      return;
     }
 
-    setEmailSent(true)
-    setIsLoading(false)
+    setEmailSent(true);
+    setIsLoading(false);
   }
 
   if (emailSent) {
@@ -69,7 +83,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </CardFooter>
       </Card>
-    )
+    );
   }
 
   return (
@@ -102,11 +116,14 @@ export default function ForgotPasswordPage() {
         </Form>
       </CardContent>
       <CardFooter>
-        <Link href="/login" className="flex items-center text-sm text-muted-foreground hover:text-primary">
+        <Link
+          href="/login"
+          className="flex items-center text-sm text-muted-foreground hover:text-primary"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Voltar para o login
         </Link>
       </CardFooter>
     </Card>
-  )
+  );
 }

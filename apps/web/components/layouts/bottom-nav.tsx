@@ -1,11 +1,11 @@
-"use client"
-import { cn } from "@/lib/utils"
-import { Home, Mail, Users, Settings, Brain, BrainCircuit } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+"use client";
+import { cn } from "@/lib/utils";
+import { Home, Mail, Users, Settings, Brain, BrainCircuit } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function BottomNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   const navigation = [
     { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
@@ -23,7 +23,7 @@ export default function BottomNav() {
       icon: Settings,
       isActive: pathname.startsWith("/settings"),
     },
-  ]
+  ];
 
   return (
     <div className="fixed sm:hidden w-full bottom-0 p-4">
@@ -54,9 +54,9 @@ export default function BottomNav() {
                 {navItem.name}
               </div>
             </Link>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

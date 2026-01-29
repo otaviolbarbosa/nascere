@@ -1,5 +1,5 @@
-import BottomNav from "@/components/layouts/bottom-nav"
-import { Sidebar } from "@/components/layouts/sidebar"
+import BottomNav from "@/components/layouts/bottom-nav";
+import { Sidebar } from "@/components/layouts/sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,5 +15,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <BottomNav />
     </div>
-  )
+  );
 }

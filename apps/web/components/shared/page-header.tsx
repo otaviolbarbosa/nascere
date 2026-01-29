@@ -1,16 +1,16 @@
-import { ChevronRight } from "lucide-react"
-import Link from "next/link"
+import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 interface Breadcrumb {
-  label: string
-  href?: string
+  label: string;
+  href?: string;
 }
 
 interface PageHeaderProps {
-  title?: string
-  description?: string
-  breadcrumbs?: Breadcrumb[]
-  children?: React.ReactNode
+  title?: string;
+  description?: string;
+  breadcrumbs?: Breadcrumb[];
+  children?: React.ReactNode;
 }
 
 export function PageHeader({ title, description, breadcrumbs, children }: PageHeaderProps) {
@@ -44,5 +44,5 @@ export function PageHeader({ title, description, breadcrumbs, children }: PageHe
         </div>
       )}
     </div>
-  )
+  );
 }

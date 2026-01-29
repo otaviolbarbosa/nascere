@@ -1,58 +1,58 @@
-import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@nascere/supabase/server"
-import { updatePatientSchema } from "@/lib/validations/patient"
-import type { TablesUpdate } from "@nascere/supabase/types"
+import { NextResponse } from "next/server";
+import { createServerSupabaseClient } from "@nascere/supabase/server";
+import { updatePatientSchema } from "@/lib/validations/patient";
+import type { TablesUpdate } from "@nascere/supabase/types";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const supabase = await createServerSupabaseClient()
+    const { id } = await params;
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     const { data: patient, error } = await supabase
       .from("patients")
       .select("*")
       .eq("id", id)
-      .single()
+      .single();
 
     if (error) {
       if (error.code === "PGRST116") {
-        return NextResponse.json({ error: "Paciente não encontrado" }, { status: 404 })
+        return NextResponse.json({ error: "Paciente não encontrado" }, { status: 404 });
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ patient })
+    return NextResponse.json({ patient });
   } catch {
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const supabase = await createServerSupabaseClient()
+    const { id } = await params;
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const validation = updatePatientSchema.safeParse(body)
+    const body = await request.json();
+    const validation = updatePatientSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error.errors }, { status: 400 })
+      return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
     const updateData: TablesUpdate<"patients"> = {
@@ -63,36 +63,36 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       due_date: validation.data.due_date,
       address: validation.data.address,
       observations: validation.data.observations,
-    }
+    };
 
     const { data: patient, error } = await supabase
       .from("patients")
       .update(updateData)
       .eq("id", id)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ patient })
+    return NextResponse.json({ patient });
   } catch {
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const supabase = await createServerSupabaseClient()
+    const { id } = await params;
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
     // Verify user is the creator
@@ -100,20 +100,23 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .from("patients")
       .select("created_by")
       .eq("id", id)
-      .single()
+      .single();
 
     if (patient?.created_by !== user.id) {
-      return NextResponse.json({ error: "Apenas o criador pode excluir o paciente" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Apenas o criador pode excluir o paciente" },
+        { status: 403 },
+      );
     }
 
-    const { error } = await supabase.from("patients").delete().eq("id", id)
+    const { error } = await supabase.from("patients").delete().eq("id", id);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

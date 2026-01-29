@@ -1,51 +1,54 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import Link from "next/link"
-import { Plus, Calendar, Clock, MapPin } from "lucide-react"
-import { dayjs } from "@/lib/dayjs"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { EmptyState } from "@/components/shared/empty-state"
-import { LoadingTable } from "@/components/shared/loading-state"
-import type { Tables } from "@nascere/supabase/types"
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { Plus, Calendar, Clock, MapPin } from "lucide-react";
+import { dayjs } from "@/lib/dayjs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingTable } from "@/components/shared/loading-state";
+import type { Tables } from "@nascere/supabase/types";
 
 type Appointment = Tables<"appointments"> & {
-  professional: { name: string; professional_type: string } | null
-}
+  professional: { name: string; professional_type: string } | null;
+};
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
+const statusLabels: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" }
+> = {
   agendada: { label: "Agendada", variant: "default" },
   realizada: { label: "Realizada", variant: "secondary" },
   cancelada: { label: "Cancelada", variant: "destructive" },
-}
+};
 
 const typeLabels: Record<string, string> = {
   consulta: "Consulta",
   encontro: "Encontro",
-}
+};
 
 export default function PatientAppointmentsPage() {
-  const params = useParams()
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
+  const params = useParams();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const patientId = params.id as string
+  const patientId = params.id as string;
 
   useEffect(() => {
     async function fetchAppointments() {
-      const response = await fetch(`/api/appointments?patient_id=${patientId}`)
-      const data = await response.json()
-      setAppointments(data.appointments || [])
-      setLoading(false)
+      const response = await fetch(`/api/appointments?patient_id=${patientId}`);
+      const data = await response.json();
+      setAppointments(data.appointments || []);
+      setLoading(false);
     }
-    fetchAppointments()
-  }, [patientId])
+    fetchAppointments();
+  }, [patientId]);
 
   if (loading) {
-    return <LoadingTable />
+    return <LoadingTable />;
   }
 
   if (appointments.length === 0) {
@@ -62,7 +65,7 @@ export default function PatientAppointmentsPage() {
           </Button>
         </Link>
       </EmptyState>
-    )
+    );
   }
 
   return (
@@ -79,7 +82,10 @@ export default function PatientAppointmentsPage() {
 
       <div className="space-y-3">
         {appointments.map((appointment) => {
-          const status = statusLabels[appointment.status] ?? { label: appointment.status, variant: "default" as const }
+          const status = statusLabels[appointment.status] ?? {
+            label: appointment.status,
+            variant: "default" as const,
+          };
           return (
             <Card key={appointment.id}>
               <CardContent className="flex items-center gap-4 p-4">
@@ -87,13 +93,13 @@ export default function PatientAppointmentsPage() {
                   <span className="text-xs font-medium uppercase">
                     {dayjs(appointment.date).format("MMM")}
                   </span>
-                  <span className="text-lg font-bold">
-                    {dayjs(appointment.date).format("DD")}
-                  </span>
+                  <span className="text-lg font-bold">{dayjs(appointment.date).format("DD")}</span>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium">{typeLabels[appointment.type] ?? appointment.type}</h3>
+                    <h3 className="font-medium">
+                      {typeLabels[appointment.type] ?? appointment.type}
+                    </h3>
                     <Badge variant={status.variant}>{status.label}</Badge>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-3 text-sm text-muted-foreground">
@@ -117,9 +123,9 @@ export default function PatientAppointmentsPage() {
                 </div>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

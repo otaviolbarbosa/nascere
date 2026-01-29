@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function LoadingState() {
   return (
@@ -13,7 +13,7 @@ export function LoadingState() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function LoadingCard() {
@@ -26,7 +26,7 @@ export function LoadingCard() {
         <Skeleton className="h-4 w-1/2" />
       </div>
     </div>
-  )
+  );
 }
 
 export function LoadingTable() {
@@ -53,5 +53,5 @@ export function LoadingTable() {
         ))}
       </div>
     </div>
-  )
+  );
 }

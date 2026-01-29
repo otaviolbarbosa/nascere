@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Dialog,
@@ -7,9 +7,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -17,18 +17,18 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet"
+} from "@/components/ui/sheet";
 
 interface ConfirmDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string
-  description: string
-  confirmLabel?: string
-  cancelLabel?: string
-  variant?: "default" | "destructive"
-  loading?: boolean
-  onConfirm: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: "default" | "destructive";
+  loading?: boolean;
+  onConfirm: () => void;
 }
 
 export function ConfirmDialog({
@@ -42,7 +42,7 @@ export function ConfirmDialog({
   loading = false,
   onConfirm,
 }: ConfirmDialogProps) {
-  const isMobile = window.innerWidth < 640
+  const isMobile = window.innerWidth < 640;
 
   return isMobile ? (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -94,5 +94,5 @@ export function ConfirmDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

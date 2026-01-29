@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Trash2 } from "lucide-react"
-import { toast } from "sonner"
-import { dayjs } from "@/lib/dayjs"
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { dayjs } from "@/lib/dayjs";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -19,24 +19,24 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { ConfirmDialog } from "@/components/shared/confirm-dialog"
-import { LoadingCard } from "@/components/shared/loading-state"
-import { updatePatientSchema, type UpdatePatientInput } from "@/lib/validations/patient"
-import type { Tables } from "@nascere/supabase/types"
+} from "@/components/ui/form";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { LoadingCard } from "@/components/shared/loading-state";
+import { updatePatientSchema, type UpdatePatientInput } from "@/lib/validations/patient";
+import type { Tables } from "@nascere/supabase/types";
 
-type Patient = Tables<"patients">
+type Patient = Tables<"patients">;
 
 export default function PatientProfilePage() {
-  const params = useParams()
-  const router = useRouter()
-  const [patient, setPatient] = useState<Patient | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const params = useParams();
+  const router = useRouter();
+  const [patient, setPatient] = useState<Patient | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const patientId = params.id as string
+  const patientId = params.id as string;
 
   const form = useForm<UpdatePatientInput>({
     resolver: zodResolver(updatePatientSchema),
@@ -50,14 +50,14 @@ export default function PatientProfilePage() {
       address: "",
       observations: "",
     },
-  })
+  });
 
   useEffect(() => {
     async function fetchPatient() {
-      const response = await fetch(`/api/patients/${patientId}`)
-      const data = await response.json()
+      const response = await fetch(`/api/patients/${patientId}`);
+      const data = await response.json();
       if (data.patient) {
-        setPatient(data.patient)
+        setPatient(data.patient);
         form.reset({
           name: data.patient.name,
           email: data.patient.email,
@@ -67,66 +67,66 @@ export default function PatientProfilePage() {
           dum: data.patient.dum || "",
           address: data.patient.address || "",
           observations: data.patient.observations || "",
-        })
+        });
       }
-      setLoading(false)
+      setLoading(false);
     }
-    fetchPatient()
-  }, [patientId, form])
+    fetchPatient();
+  }, [patientId, form]);
 
   async function onSubmit(data: UpdatePatientInput) {
-    setIsSaving(true)
+    setIsSaving(true);
 
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erro ao atualizar paciente")
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao atualizar paciente");
       }
 
-      const updated = await response.json()
-      setPatient(updated.patient)
-      toast.success("Paciente atualizada com sucesso!")
+      const updated = await response.json();
+      setPatient(updated.patient);
+      toast.success("Paciente atualizada com sucesso!");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao atualizar paciente")
+      toast.error(error instanceof Error ? error.message : "Erro ao atualizar paciente");
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   async function handleDelete() {
-    setIsDeleting(true)
+    setIsDeleting(true);
 
     try {
       const response = await fetch(`/api/patients/${patientId}`, {
         method: "DELETE",
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erro ao excluir paciente")
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao excluir paciente");
       }
 
-      toast.success("Paciente excluída com sucesso!")
-      router.push("/patients")
+      toast.success("Paciente excluída com sucesso!");
+      router.push("/patients");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao excluir paciente")
-      setIsDeleting(false)
-      setShowDeleteDialog(false)
+      toast.error(error instanceof Error ? error.message : "Erro ao excluir paciente");
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   }
 
   if (loading) {
-    return <LoadingCard />
+    return <LoadingCard />;
   }
 
   if (!patient) {
-    return null
+    return null;
   }
 
   return (
@@ -210,14 +210,14 @@ export default function PatientProfilePage() {
                             type="date"
                             {...field}
                             onChange={(e) => {
-                              field.onChange(e)
-                              const dpp = e.target.value
+                              field.onChange(e);
+                              const dpp = e.target.value;
                               if (dpp) {
-                                const dppDate = new Date(`${dpp}T00:00:00`)
-                                dppDate.setDate(dppDate.getDate() - 280)
-                                form.setValue("dum", dppDate.toISOString().split("T")[0])
+                                const dppDate = new Date(`${dpp}T00:00:00`);
+                                dppDate.setDate(dppDate.getDate() - 280);
+                                form.setValue("dum", dppDate.toISOString().split("T")[0]);
                               } else {
-                                form.setValue("dum", "")
+                                form.setValue("dum", "");
                               }
                             }}
                           />
@@ -326,5 +326,5 @@ export default function PatientProfilePage() {
         onConfirm={handleDelete}
       />
     </>
-  )
+  );
 }

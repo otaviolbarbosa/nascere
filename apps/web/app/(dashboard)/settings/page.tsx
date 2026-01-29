@@ -1,4 +1,4 @@
-import { Header } from "@/components/layouts/header"
+import { Header } from "@/components/layouts/header";
 
 export default function SettingsPage() {
   return (
@@ -6,5 +6,5 @@ export default function SettingsPage() {
       <Header title="Configurações" />
       <div className="flex flex-1 justify-center items-center">Settings</div>
     </div>
-  )
+  );
 }

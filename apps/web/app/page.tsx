@@ -1,8 +1,8 @@
-import Link from "next/link"
-import { Baby, Users, Calendar, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Logo } from "@/components/shared/logo"
+import Link from "next/link";
+import { Baby, Users, Calendar, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/shared/logo";
 
 export default function HomePage() {
   return (
@@ -60,7 +60,8 @@ export default function HomePage() {
                 <Baby className="mb-2 h-10 w-10 text-primary-500" />
                 <CardTitle>Gestão de Pacientes</CardTitle>
                 <CardDescription>
-                  Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações organizadas.
+                  Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações
+                  organizadas.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -69,7 +70,8 @@ export default function HomePage() {
                 <Calendar className="mb-2 h-10 w-10 text-primary-500" />
                 <CardTitle>Agendamentos</CardTitle>
                 <CardDescription>
-                  Organize consultas e encontros, com histórico completo de atendimentos para cada paciente.
+                  Organize consultas e encontros, com histórico completo de atendimentos para cada
+                  paciente.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -78,7 +80,8 @@ export default function HomePage() {
                 <Users className="mb-2 h-10 w-10 text-primary-500" />
                 <CardTitle>Equipe Multidisciplinar</CardTitle>
                 <CardDescription>
-                  Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.
+                  Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada
+                  gestante.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -89,9 +92,7 @@ export default function HomePage() {
       {/* CTA */}
       <section className="bg-primary-600 py-16">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-white">
-            Comece a usar gratuitamente
-          </h2>
+          <h2 className="mb-4 text-3xl font-bold text-white">Comece a usar gratuitamente</h2>
           <p className="mb-8 text-primary-100">
             Cadastre-se agora e organize o acompanhamento de suas pacientes.
           </p>
@@ -110,5 +111,5 @@ export default function HomePage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

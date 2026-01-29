@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Users, Mail, LogOut } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/use-auth"
-import { Logo } from "@/components/shared/logo"
-import { getInitials} from "@/utils"
-import Image from "next/image"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Users, Mail, LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/shared/logo";
+import { getInitials } from "@/utils";
+import Image from "next/image";
 
 const navigation = [
   { name: "Pacientes", href: "/patients", icon: Users },
   { name: "Convites", href: "/invites", icon: Mail },
-]
+];
 
 export function Sidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { signOut, profile } = useAuth()
+  const pathname = usePathname();
+  const router = useRouter();
+  const { signOut, profile } = useAuth();
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push("/login")
-  }
+    await signOut();
+    router.push("/login");
+  };
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-white">
@@ -35,7 +35,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link
               key={item.name}
@@ -50,7 +50,7 @@ export function Sidebar() {
               <item.icon className="h-5 w-5" />
               {item.name}
             </Link>
-          )
+          );
         })}
       </nav>
 
@@ -79,5 +79,5 @@ export function Sidebar() {
         </Button>
       </div>
     </div>
-  )
+  );
 }

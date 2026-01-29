@@ -1,4 +1,4 @@
-import { Logo } from "@/components/shared/logo"
+import { Logo } from "@/components/shared/logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,5 +11,5 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {children}
       </div>
     </div>
-  )
+  );
 }

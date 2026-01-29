@@ -1,24 +1,31 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Header } from "@/components/layouts/header"
-import { PageHeader } from "@/components/shared/page-header"
-import { createPatientSchema, type CreatePatientInput } from "@/lib/validations/patient"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Header } from "@/components/layouts/header";
+import { PageHeader } from "@/components/shared/page-header";
+import { createPatientSchema, type CreatePatientInput } from "@/lib/validations/patient";
 
 export default function NewPatientPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<CreatePatientInput>({
     resolver: zodResolver(createPatientSchema),
@@ -32,29 +39,29 @@ export default function NewPatientPage() {
       address: "",
       observations: "",
     },
-  })
+  });
 
   async function onSubmit(data: CreatePatientInput) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       const response = await fetch("/api/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erro ao cadastrar paciente")
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao cadastrar paciente");
       }
 
-      toast.success("Paciente cadastrada com sucesso!")
-      router.push("/patients")
+      toast.success("Paciente cadastrada com sucesso!");
+      router.push("/patients");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente")
+      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -63,17 +70,15 @@ export default function NewPatientPage() {
       <Header title="Nova Gestante" back />
       <div className="p-4 pt-0 md:p-6">
         <PageHeader
-          breadcrumbs={[
-            { label: "Pacientes", href: "/patients" },
-            { label: "Nova Gestante" },
-          ]}
+          breadcrumbs={[{ label: "Pacientes", href: "/patients" }, { label: "Nova Gestante" }]}
         />
 
         <Card>
           <CardHeader>
             <CardTitle>Informações da Gestante</CardTitle>
             <CardDescription>
-              Preencha os dados da gestante. Você será adicionado automaticamente como membro da equipe.
+              Preencha os dados da gestante. Você será adicionado automaticamente como membro da
+              equipe.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -145,17 +150,21 @@ export default function NewPatientPage() {
                       <FormItem>
                         <FormLabel>Data prevista do parto (DPP)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} onChange={(e) => {
-                            field.onChange(e)
-                            // const dpp = e.target.value
-                            // if (dpp) {
-                            //   const dppDate = new Date(`${dpp}T00:00:00`)
-                            //   dppDate.setDate(dppDate.getDate() - 280)
-                            //   form.setValue("dum", dppDate.toISOString().split("T")[0])
-                            // } else {
-                            //   form.setValue("dum", "")
-                            // }
-                          }} />
+                          <Input
+                            type="date"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              // const dpp = e.target.value
+                              // if (dpp) {
+                              //   const dppDate = new Date(`${dpp}T00:00:00`)
+                              //   dppDate.setDate(dppDate.getDate() - 280)
+                              //   form.setValue("dum", dppDate.toISOString().split("T")[0])
+                              // } else {
+                              //   form.setValue("dum", "")
+                              // }
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,5 +238,5 @@ export default function NewPatientPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

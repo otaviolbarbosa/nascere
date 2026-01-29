@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Heart, Users, Mail, LogOut, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { SheetClose } from "@/components/ui/sheet"
-import { useAuth } from "@/hooks/use-auth"
-import { Logo } from "@/components/shared/logo"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Heart, Users, Mail, LogOut, Home } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { SheetClose } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/use-auth";
+import { Logo } from "@/components/shared/logo";
 
 const navigation = [
   { name: "Início", href: "/home", icon: Home },
   { name: "Pacientes", href: "/patients", icon: Users },
   { name: "Convites", href: "/invites", icon: Mail },
-]
+];
 
 export function MobileNav() {
-  const pathname = usePathname()
-  const { signOut, profile } = useAuth()
+  const pathname = usePathname();
+  const { signOut, profile } = useAuth();
 
   return (
     <div className="flex h-full flex-col">
@@ -33,7 +33,7 @@ export function MobileNav() {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+          const isActive = pathname.startsWith(item.href);
           return (
             <SheetClose key={item.name} asChild>
               <Link
@@ -42,14 +42,14 @@ export function MobileNav() {
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary-50 text-primary-700"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
                 )}
               >
                 <item.icon className="h-5 w-5" />
                 {item.name}
               </Link>
             </SheetClose>
-          )
+          );
         })}
       </nav>
 
@@ -76,5 +76,5 @@ export function MobileNav() {
         </SheetClose>
       </div>
     </div>
-  )
+  );
 }

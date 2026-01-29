@@ -1,44 +1,44 @@
-"use client"
+"use client";
 
-import { Bell, ChevronLeft, DotSquare, EllipsisVertical, Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { useAuth } from "@/hooks/use-auth"
-import Image from "next/image"
-import { getInitials } from "@/utils"
+import { Bell, ChevronLeft, DotSquare, EllipsisVertical, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import Image from "next/image";
+import { getInitials } from "@/utils";
 
 interface HeaderProps {
-  title?: string
-  back?: boolean
+  title?: string;
+  back?: boolean;
 }
 
 export function Header({ title, back }: HeaderProps) {
-  const router = useRouter()
-  const [isScrolled, setIsScrolled] = useState(false)
-  const { profile } = useAuth()
+  const router = useRouter();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { profile } = useAuth();
 
   useEffect(() => {
-    const scrollContainer = document.querySelector("main")
+    const scrollContainer = document.querySelector("main");
 
     const handleScroll = () => {
-      const scrollTop = scrollContainer?.scrollTop ?? window.scrollY
-      setIsScrolled(scrollTop > 10)
-    }
+      const scrollTop = scrollContainer?.scrollTop ?? window.scrollY;
+      setIsScrolled(scrollTop > 10);
+    };
 
-    handleScroll()
+    handleScroll();
 
     if (scrollContainer) {
-      scrollContainer.addEventListener("scroll", handleScroll, { passive: true })
-      return () => scrollContainer.removeEventListener("scroll", handleScroll)
+      scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+      return () => scrollContainer.removeEventListener("scroll", handleScroll);
     }
 
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  const handleGoBack = router.back
+  const handleGoBack = router.back;
 
   return (
     <header
@@ -76,5 +76,5 @@ export function Header({ title, back }: HeaderProps) {
         </Button>
       </div>
     </header>
-  )
+  );
 }

@@ -1,25 +1,25 @@
-import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@nascere/supabase/server"
-import type { TablesInsert } from "@nascere/supabase/types"
+import { NextResponse } from "next/server";
+import { createServerSupabaseClient } from "@nascere/supabase/server";
+import type { TablesInsert } from "@nascere/supabase/types";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params
-    const supabase = await createServerSupabaseClient()
+    const { id } = await params;
+    const supabase = await createServerSupabaseClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { action } = body // 'accept' or 'reject'
+    const body = await request.json();
+    const { action } = body; // 'accept' or 'reject'
 
     if (!["accept", "reject"].includes(action)) {
-      return NextResponse.json({ error: "Ação inválida" }, { status: 400 })
+      return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
     }
 
     // Get the invite
@@ -29,16 +29,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .eq("id", id)
       .eq("invited_professional_id", user.id)
       .eq("status", "pendente")
-      .single()
+      .single();
 
     if (inviteError || !invite) {
-      return NextResponse.json({ error: "Convite não encontrado" }, { status: 404 })
+      return NextResponse.json({ error: "Convite não encontrado" }, { status: 404 });
     }
 
     // Check if invite has expired
     if (new Date(invite.expires_at) < new Date()) {
-      await supabase.from("team_invites").update({ status: "expirado" }).eq("id", id)
-      return NextResponse.json({ error: "Convite expirado" }, { status: 400 })
+      await supabase.from("team_invites").update({ status: "expirado" }).eq("id", id);
+      return NextResponse.json({ error: "Convite expirado" }, { status: 400 });
     }
 
     if (action === "accept") {
@@ -48,14 +48,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         .select("id")
         .eq("patient_id", invite.patient_id)
         .eq("professional_type", invite.professional_type)
-        .single()
+        .single();
 
       if (existingMember) {
-        await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id)
+        await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
         return NextResponse.json(
           { error: `Já existe um ${invite.professional_type} na equipe desta paciente` },
-          { status: 400 }
-        )
+          { status: 400 },
+        );
       }
 
       // Add user to team
@@ -63,24 +63,24 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         patient_id: invite.patient_id,
         professional_id: user.id,
         professional_type: invite.professional_type,
-      }
+      };
 
-      const { error: teamError } = await supabase.from("team_members").insert(teamMemberData)
+      const { error: teamError } = await supabase.from("team_members").insert(teamMemberData);
 
       if (teamError) {
-        return NextResponse.json({ error: teamError.message }, { status: 500 })
+        return NextResponse.json({ error: teamError.message }, { status: 500 });
       }
 
       // Update invite status
-      await supabase.from("team_invites").update({ status: "aceito" }).eq("id", id)
+      await supabase.from("team_invites").update({ status: "aceito" }).eq("id", id);
 
-      return NextResponse.json({ success: true, message: "Convite aceito com sucesso" })
+      return NextResponse.json({ success: true, message: "Convite aceito com sucesso" });
     } else {
       // Reject the invite
-      await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id)
-      return NextResponse.json({ success: true, message: "Convite rejeitado" })
+      await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
+      return NextResponse.json({ success: true, message: "Convite rejeitado" });
     }
   } catch {
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }
 }

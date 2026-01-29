@@ -1,11 +1,11 @@
-"use client"
-import { Header } from "@/components/layouts/header"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/hooks/use-auth"
-import Image from "next/image"
+"use client";
+import { Header } from "@/components/layouts/header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import Image from "next/image";
 
 export default function Home() {
-  const { profile } = useAuth()
+  const { profile } = useAuth();
 
   return (
     <div>
@@ -39,5 +39,5 @@ export default function Home() {
         {/* <Card></Card> */}
       </div>
     </div>
-  )
+  );
 }

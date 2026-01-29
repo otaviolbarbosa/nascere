@@ -1,20 +1,40 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/hooks/use-auth";
 
 const registerSchema = z
   .object({
@@ -29,14 +49,14 @@ const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
     path: ["confirmPassword"],
-  })
+  });
 
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const router = useRouter()
-  const { signUp } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { signUp } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -46,27 +66,27 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
     },
-  })
+  });
 
   async function onSubmit(data: RegisterFormData) {
-    setIsLoading(true)
+    setIsLoading(true);
     const { error } = await signUp(data.email, data.password, {
       name: data.name,
       professional_type: data.professional_type,
-    })
+    });
 
     if (error) {
       toast.error("Erro ao criar conta", {
         description: error.message,
-      })
-      setIsLoading(false)
-      return
+      });
+      setIsLoading(false);
+      return;
     }
 
     toast.success("Conta criada com sucesso!", {
       description: "Verifique seu email para confirmar sua conta.",
-    })
-    router.push("/login")
+    });
+    router.push("/login");
   }
 
   return (
@@ -168,5 +188,5 @@ export default function RegisterPage() {
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

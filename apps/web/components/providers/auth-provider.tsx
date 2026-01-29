@@ -1,79 +1,79 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
-import { supabase } from "@nascere/supabase"
-import type { User } from "@supabase/supabase-js"
-import type { Tables } from "@nascere/supabase/types"
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { supabase } from "@nascere/supabase";
+import type { User } from "@supabase/supabase-js";
+import type { Tables } from "@nascere/supabase/types";
 
-type UserProfile = Tables<"users">
+type UserProfile = Tables<"users">;
 
 interface AuthContextType {
-  user: User | null
-  profile: UserProfile | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>
+  user: User | null;
+  profile: UserProfile | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>;
   signUp: (
     email: string,
     password: string,
     metadata: { name: string; professional_type: string },
-  ) => Promise<{ data: unknown; error: unknown }>
-  signOut: () => Promise<{ error: unknown }>
-  resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>
-  signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>
-  isAuthenticated: boolean
-  isProfessional: boolean
-  isPatient: boolean
+  ) => Promise<{ data: unknown; error: unknown }>;
+  signOut: () => Promise<{ error: unknown }>;
+  resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
+  signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
+  isAuthenticated: boolean;
+  isProfessional: boolean;
+  isPatient: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const { data } = await supabase.from("users").select("*").eq("id", userId).single()
+    const { data } = await supabase.from("users").select("*").eq("id", userId).single();
     console.log(data);
-    setProfile(data)
-  }, [])
+    setProfile(data);
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
-      console.log('user',user)
-      setUser(user)
+      } = await supabase.auth.getUser();
+      console.log("user", user);
+      setUser(user);
       if (user) {
-        await fetchProfile(user.id)
+        await fetchProfile(user.id);
       }
-      setLoading(false)
-    }
+      setLoading(false);
+    };
 
-    getUser()
+    getUser();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
+      setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        await fetchProfile(session.user.id);
       } else {
-        setProfile(null)
+        setProfile(null);
       }
-    })
+    });
 
-    return () => subscription.unsubscribe()
-  }, [fetchProfile])
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
-    return { data, error }
-  }
+    });
+    return { data, error };
+  };
 
   const signUp = async (
     email: string,
@@ -86,21 +86,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         data: metadata,
       },
-    })
-    return { data, error }
-  }
+    });
+    return { data, error };
+  };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
-  }
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  };
 
   const resetPassword = async (email: string) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
-    })
-    return { data, error }
-  }
+    });
+    return { data, error };
+  };
 
   const signInWithGoogle = async (redirectTo?: string) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -108,9 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo || "/home"}`,
       },
-    })
-    return { data, error }
-  }
+    });
+    return { data, error };
+  };
 
   const value: AuthContextType = {
     user,
@@ -124,15 +124,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isProfessional: profile?.user_type === "professional",
     isPatient: profile?.user_type === "patient",
-  }
+  };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

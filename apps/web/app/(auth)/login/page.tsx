@@ -1,36 +1,50 @@
-"use client"
+"use client";
 
-import { Suspense, useState } from "react"
-import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
-import { SocialLoginButtons } from "@/components/auth/social-login-buttons"
-import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
+import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-})
+});
 
-type LoginFormData = z.infer<typeof loginSchema>
+type LoginFormData = z.infer<typeof loginSchema>;
 
 function LoginForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirectTo") || "/home"
-  const { signIn } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/home";
+  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,24 +52,25 @@ function LoginForm() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(data: LoginFormData) {
-    setIsLoading(true)
-    const { error } = await signIn(data.email, data.password)
+    setIsLoading(true);
+    const { error } = await signIn(data.email, data.password);
 
     if (error) {
       toast.error("Erro ao fazer login", {
-        description: error.message === "Invalid login credentials"
-          ? "Email ou senha incorretos"
-          : error.message,
-      })
-      setIsLoading(false)
-      return
+        description:
+          error.message === "Invalid login credentials"
+            ? "Email ou senha incorretos"
+            : error.message,
+      });
+      setIsLoading(false);
+      return;
     }
 
-    toast.success("Login realizado com sucesso!")
-    router.push(redirectTo)
+    toast.success("Login realizado com sucesso!");
+    router.push(redirectTo);
   }
 
   return (
@@ -123,7 +138,7 @@ function LoginForm() {
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 function LoginFormSkeleton() {
@@ -150,7 +165,7 @@ function LoginFormSkeleton() {
         <Skeleton className="h-4 w-40" />
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 export default function LoginPage() {
@@ -158,5 +173,5 @@ export default function LoginPage() {
     <Suspense fallback={<LoginFormSkeleton />}>
       <LoginForm />
     </Suspense>
-  )
+  );
 }

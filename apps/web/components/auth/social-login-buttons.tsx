@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Loader2 } from "lucide-react"
-import { toast } from "sonner"
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/use-auth"
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SocialLoginButtonsProps {
-  redirectTo?: string
+  redirectTo?: string;
 }
 
 function GoogleIcon() {
@@ -31,24 +31,24 @@ function GoogleIcon() {
         fill="#EA4335"
       />
     </svg>
-  )
+  );
 }
 
 export function SocialLoginButtons({ redirectTo }: SocialLoginButtonsProps) {
-  const { signInWithGoogle } = useAuth()
-  const [loadingProvider, setLoadingProvider] = useState<string | null>(null)
+  const { signInWithGoogle } = useAuth();
+  const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
-    setLoadingProvider("google")
-    const { error } = await signInWithGoogle(redirectTo)
+    setLoadingProvider("google");
+    const { error } = await signInWithGoogle(redirectTo);
 
     if (error) {
       toast.error("Erro ao fazer login com Google", {
         description: error.message,
-      })
-      setLoadingProvider(null)
+      });
+      setLoadingProvider(null);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -67,5 +67,5 @@ export function SocialLoginButtons({ redirectTo }: SocialLoginButtonsProps) {
         Continuar com Google
       </Button>
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { Header } from "@/components/layouts/header"
+import { Header } from "@/components/layouts/header";
 
 export default function AIPage() {
   return (
@@ -6,5 +6,5 @@ export default function AIPage() {
       <Header title="Nascere AI" />
       <div className="flex flex-1 justify-center items-center">Nascere AI</div>
     </div>
-  )
+  );
 }

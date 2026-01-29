@@ -1,68 +1,68 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Mail, Check, X, Baby, Calendar } from "lucide-react"
-import { toast } from "sonner"
-import { dayjs } from "@/lib/dayjs"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Header } from "@/components/layouts/header"
-import { PageHeader } from "@/components/shared/page-header"
-import { EmptyState } from "@/components/shared/empty-state"
-import { LoadingTable } from "@/components/shared/loading-state"
+import { useEffect, useState } from "react";
+import { Mail, Check, X, Baby, Calendar } from "lucide-react";
+import { toast } from "sonner";
+import { dayjs } from "@/lib/dayjs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/layouts/header";
+import { PageHeader } from "@/components/shared/page-header";
+import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingTable } from "@/components/shared/loading-state";
 
 type Invite = {
-  id: string
-  professional_type: string
-  expires_at: string
-  patient: { id: string; name: string; due_date: string; gestational_week: number | null } | null
-  inviter: { name: string; professional_type: string } | null
-}
+  id: string;
+  professional_type: string;
+  expires_at: string;
+  patient: { id: string; name: string; due_date: string; gestational_week: number | null } | null;
+  inviter: { name: string; professional_type: string } | null;
+};
 
 const professionalTypeLabels: Record<string, string> = {
   obstetra: "Obstetra",
   enfermeiro: "Enfermeiro(a)",
   doula: "Doula",
-}
+};
 
 export default function InvitesPage() {
-  const [invites, setInvites] = useState<Invite[]>([])
-  const [loading, setLoading] = useState(true)
-  const [processingId, setProcessingId] = useState<string | null>(null)
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchInvites()
-  }, [])
+    fetchInvites();
+  }, []);
 
   async function fetchInvites() {
-    const response = await fetch("/api/team/invites")
-    const data = await response.json()
-    setInvites(data.invites || [])
-    setLoading(false)
+    const response = await fetch("/api/team/invites");
+    const data = await response.json();
+    setInvites(data.invites || []);
+    setLoading(false);
   }
 
   async function handleAction(inviteId: string, action: "accept" | "reject") {
-    setProcessingId(inviteId)
+    setProcessingId(inviteId);
 
     try {
       const response = await fetch(`/api/team/invites/${inviteId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Erro ao processar convite")
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao processar convite");
       }
 
-      toast.success(action === "accept" ? "Convite aceito!" : "Convite rejeitado")
-      setInvites(invites.filter((i) => i.id !== inviteId))
+      toast.success(action === "accept" ? "Convite aceito!" : "Convite rejeitado");
+      setInvites(invites.filter((i) => i.id !== inviteId));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao processar convite")
+      toast.error(error instanceof Error ? error.message : "Erro ao processar convite");
     } finally {
-      setProcessingId(null)
+      setProcessingId(null);
     }
   }
 
@@ -70,10 +70,7 @@ export default function InvitesPage() {
     <div>
       <Header title="Convites" />
       <div className="p-4 md:p-6">
-        <PageHeader
-          title="Convites"
-          description="Convites recebidos para participar de equipes"
-        />
+        <PageHeader title="Convites" description="Convites recebidos para participar de equipes" />
 
         {loading ? (
           <LoadingTable />
@@ -92,7 +89,8 @@ export default function InvitesPage() {
                     <div>
                       <CardTitle className="text-lg">{invite.patient?.name}</CardTitle>
                       <CardDescription>
-                        Convidado por {invite.inviter?.name} ({professionalTypeLabels[invite.inviter?.professional_type || ""]})
+                        Convidado por {invite.inviter?.name} (
+                        {professionalTypeLabels[invite.inviter?.professional_type || ""]})
                       </CardDescription>
                     </div>
                     <Badge>{professionalTypeLabels[invite.professional_type]}</Badge>
@@ -142,5 +140,5 @@ export default function InvitesPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
