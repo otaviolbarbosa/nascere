@@ -141,7 +141,7 @@ export default function PatientTeamPage() {
       if (error) throw error
 
       toast.success("Você saiu da equipe")
-      window.location.href = "/dashboard/patients"
+      window.location.href = "/patients"
     } catch (error) {
       toast.error("Erro ao sair da equipe")
       setIsLeaving(false)

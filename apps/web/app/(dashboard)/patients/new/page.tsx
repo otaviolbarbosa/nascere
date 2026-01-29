@@ -50,7 +50,7 @@ export default function NewPatientPage() {
       }
 
       toast.success("Paciente cadastrada com sucesso!")
-      router.push("/dashboard/patients")
+      router.push("/patients")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente")
     } finally {
@@ -60,20 +60,18 @@ export default function NewPatientPage() {
 
   return (
     <div>
-      <Header title="Nova Paciente" />
-      <div className="p-4 md:p-6">
+      <Header title="Nova Gestante" back />
+      <div className="p-4 pt-0 md:p-6">
         <PageHeader
-          title="Nova Paciente"
-          description="Cadastre uma nova paciente gestante"
           breadcrumbs={[
-            { label: "Pacientes", href: "/dashboard/patients" },
-            { label: "Nova Paciente" },
+            { label: "Pacientes", href: "/patients" },
+            { label: "Nova Gestante" },
           ]}
         />
 
         <Card>
           <CardHeader>
-            <CardTitle>Informações da Paciente</CardTitle>
+            <CardTitle>Informações da Gestante</CardTitle>
             <CardDescription>
               Preencha os dados da gestante. Você será adicionado automaticamente como membro da equipe.
             </CardDescription>
@@ -149,14 +147,14 @@ export default function NewPatientPage() {
                         <FormControl>
                           <Input type="date" {...field} onChange={(e) => {
                             field.onChange(e)
-                            const dpp = e.target.value
-                            if (dpp) {
-                              const dppDate = new Date(`${dpp}T00:00:00`)
-                              dppDate.setDate(dppDate.getDate() - 280)
-                              form.setValue("dum", dppDate.toISOString().split("T")[0])
-                            } else {
-                              form.setValue("dum", "")
-                            }
+                            // const dpp = e.target.value
+                            // if (dpp) {
+                            //   const dppDate = new Date(`${dpp}T00:00:00`)
+                            //   dppDate.setDate(dppDate.getDate() - 280)
+                            //   form.setValue("dum", dppDate.toISOString().split("T")[0])
+                            // } else {
+                            //   form.setValue("dum", "")
+                            // }
                           }} />
                         </FormControl>
                         <FormMessage />

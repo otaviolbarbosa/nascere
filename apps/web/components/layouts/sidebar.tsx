@@ -7,11 +7,12 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { Logo } from "@/components/shared/logo"
+import { getInitials} from "@/utils"
 import Image from "next/image"
 
 const navigation = [
-  { name: "Pacientes", href: "/dashboard/patients", icon: Users },
-  { name: "Convites", href: "/dashboard/invites", icon: Mail },
+  { name: "Pacientes", href: "/patients", icon: Users },
+  { name: "Convites", href: "/invites", icon: Mail },
 ]
 
 export function Sidebar() {
@@ -24,26 +25,11 @@ export function Sidebar() {
     router.push("/login")
   }
 
-  const getInitials = () => {
-    const names = profile?.name.split(" ")
-
-    if (!names || names.length === 0) {
-      return "U"
-    }
-
-    const initials =
-      names.length === 1
-        ? names[0]?.charAt(0)
-        : `${names[0]?.charAt(0)} ${names[names.length - 1]?.charAt(0)} `
-
-    return initials
-  }
-
   return (
     <div className="flex h-full w-64 flex-col border-r bg-white">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
-        <Logo href="/dashboard" size="xl" />
+        <Logo href="/home" size="xl" />
       </div>
 
       {/* Navigation */}
@@ -75,7 +61,7 @@ export function Sidebar() {
             {profile?.avatar_url ? (
               <Image src={profile.avatar_url} alt="User avatar" width={40} height={40} priority />
             ) : (
-              getInitials()
+              getInitials(profile?.name)
             )}
           </div>
           <div className="flex-1 truncate">

@@ -51,7 +51,7 @@ export default function NewAppointmentPage() {
       }
 
       toast.success("Agendamento criado com sucesso!")
-      router.push(`/dashboard/patients/${patientId}/appointments`)
+      router.push(`/patients/${patientId}/appointments`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao criar agendamento")
     } finally {

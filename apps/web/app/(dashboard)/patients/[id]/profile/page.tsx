@@ -12,7 +12,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { LoadingCard } from "@/components/shared/loading-state"
 import { updatePatientSchema, type UpdatePatientInput } from "@/lib/validations/patient"
@@ -106,7 +113,7 @@ export default function PatientProfilePage() {
       }
 
       toast.success("Paciente excluída com sucesso!")
-      router.push("/dashboard/patients")
+      router.push("/patients")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao excluir paciente")
       setIsDeleting(false)
@@ -127,7 +134,7 @@ export default function PatientProfilePage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Informações da Paciente</CardTitle>
+            <CardTitle>Informações da Gestante</CardTitle>
             <CardDescription>Atualize os dados da gestante</CardDescription>
           </CardHeader>
           <CardContent>
@@ -199,17 +206,21 @@ export default function PatientProfilePage() {
                       <FormItem>
                         <FormLabel>Data prevista do parto (DPP)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} onChange={(e) => {
-                            field.onChange(e)
-                            const dpp = e.target.value
-                            if (dpp) {
-                              const dppDate = new Date(`${dpp}T00:00:00`)
-                              dppDate.setDate(dppDate.getDate() - 280)
-                              form.setValue("dum", dppDate.toISOString().split("T")[0])
-                            } else {
-                              form.setValue("dum", "")
-                            }
-                          }} />
+                          <Input
+                            type="date"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e)
+                              const dpp = e.target.value
+                              if (dpp) {
+                                const dppDate = new Date(`${dpp}T00:00:00`)
+                                dppDate.setDate(dppDate.getDate() - 280)
+                                form.setValue("dum", dppDate.toISOString().split("T")[0])
+                              } else {
+                                form.setValue("dum", "")
+                              }
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -278,7 +289,7 @@ export default function PatientProfilePage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-muted-foreground">Semana gestacional</p>
-                <p className="text-2xl font-bold">{patient.gestational_week || "-"}</p>
+                <p className="text-2xl font-bold">{patient.dum || "-"}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Data prevista do parto</p>
@@ -293,22 +304,14 @@ export default function PatientProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Zona de perigo</CardTitle>
-              <CardDescription>Ações irreversíveis</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir Paciente
-              </Button>
-            </CardContent>
-          </Card>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Excluir Paciente
+          </Button>
         </div>
       </div>
 
@@ -316,7 +319,7 @@ export default function PatientProfilePage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Excluir paciente"
-        description="Tem certeza que deseja excluir esta paciente? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos."
+        description="Tem certeza que deseja excluir esta paciente?`Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos."
         confirmLabel="Excluir"
         variant="destructive"
         loading={isDeleting}

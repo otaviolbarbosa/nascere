@@ -51,7 +51,7 @@ export async function middleware(request: NextRequest) {
   // If user is authenticated and trying to access auth pages
   if (user && (pathname.startsWith("/login") || pathname.startsWith("/register"))) {
     const url = request.nextUrl.clone()
-    url.pathname = "/dashboard"
+    url.pathname = "/home"
     return NextResponse.redirect(url)
   }
 

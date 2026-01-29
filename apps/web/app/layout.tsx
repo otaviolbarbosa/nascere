@@ -1,8 +1,14 @@
 import type { Metadata } from "next"
 import localFont from "next/font/local"
+import { Poppins } from "next/font/google"
 import { Providers } from "@/components/providers"
 import "./globals.css"
 
+const poppinsSans = Poppins({
+  weight: ['400', '500', '600', '700'],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+})
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -24,7 +30,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${poppinsSans.variable} font-sans antialiased`}>
+      {/* <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}> */}
         <Providers>{children}</Providers>
       </body>
     </html>

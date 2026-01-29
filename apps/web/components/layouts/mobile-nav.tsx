@@ -2,15 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Heart, Users, Mail, LogOut } from "lucide-react"
+import { Heart, Users, Mail, LogOut, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SheetClose } from "@/components/ui/sheet"
 import { useAuth } from "@/hooks/use-auth"
+import { Logo } from "@/components/shared/logo"
 
 const navigation = [
-  { name: "Pacientes", href: "/dashboard/patients", icon: Users },
-  { name: "Convites", href: "/dashboard/invites", icon: Mail },
+  { name: "Início", href: "/home", icon: Home },
+  { name: "Pacientes", href: "/patients", icon: Users },
+  { name: "Convites", href: "/invites", icon: Mail },
 ]
 
 export function MobileNav() {
@@ -22,9 +24,8 @@ export function MobileNav() {
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
         <SheetClose asChild>
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-primary-500" />
-            <span className="text-xl font-bold text-primary-700">Doulando</span>
+          <Link href="/home" className="flex items-center space-x-2">
+            <Logo href="/home" size="xl" />
           </Link>
         </SheetClose>
       </div>

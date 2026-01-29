@@ -55,7 +55,7 @@ export default function PatientAppointmentsPage() {
         title="Nenhum agendamento"
         description="Ainda não há agendamentos para esta paciente."
       >
-        <Link href={`/dashboard/patients/${patientId}/appointments/new`}>
+        <Link href={`/patients/${patientId}/appointments/new`}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
@@ -69,7 +69,7 @@ export default function PatientAppointmentsPage() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Agendamentos</h2>
-        <Link href={`/dashboard/patients/${patientId}/appointments/new`}>
+        <Link href={`/patients/${patientId}/appointments/new`}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento

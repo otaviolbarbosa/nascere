@@ -28,7 +28,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get("redirectTo") || "/dashboard"
+  const redirectTo = searchParams.get("redirectTo") || "/home"
   const { signIn } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
 

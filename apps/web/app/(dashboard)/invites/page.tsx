@@ -101,12 +101,12 @@ export default function InvitesPage() {
                 <CardContent>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      {invite.patient?.gestational_week && (
+                      {/* {invite.patient?.gestational_week && (
                         <div className="flex items-center gap-1">
                           <Baby className="h-4 w-4" />
                           <span>{invite.patient.gestational_week} semanas</span>
                         </div>
-                      )}
+                      )} */}
                       {invite.patient?.due_date && (
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
