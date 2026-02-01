@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { Poppins } from "next/font/google";
-import { Providers } from "@/components/providers";
+import localFont from "next/font/local";
 import "./globals.css";
 
 const poppinsSans = Poppins({
@@ -19,7 +18,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Doulando - Gestão de Saúde para Gestantes",
+  title: "Nascere - Gestão de Saúde para Gestantes",
   description: "Plataforma de gestão de saúde para profissionais de saúde acompanharem gestantes",
 };
 
@@ -30,9 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${poppinsSans.variable} font-sans antialiased`}>
-        {/* <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}> */}
-        <Providers>{children}</Providers>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${poppinsSans.variable} font-sans antialiased`}
+      >
+        {children}
       </body>
     </html>
   );

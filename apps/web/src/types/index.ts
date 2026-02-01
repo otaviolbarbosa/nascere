@@ -1,0 +1,22 @@
+export type Invite = {
+  id: string;
+  professional_type: string | null;
+  expires_at: string;
+  patient: { id: string; name: string; due_date: string; dum: string } | null;
+  inviter: { name: string; professional_type: string | null } | null;
+};
+
+export type TeamMember = {
+  id: string;
+  professional_id: string;
+  professional_type: string;
+  joined_at: string | null;
+  professional: { id: string; name: string; email: string } | null;
+};
+
+export type Professional = {
+  id: string;
+  name: string;
+  email: string;
+  professional_type: string | null;
+};

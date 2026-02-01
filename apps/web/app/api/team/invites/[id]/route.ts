@@ -42,18 +42,38 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     if (action === "accept") {
+      // Get professional_type from invite or from user profile
+      let professionalType = invite.professional_type;
+
+      if (!professionalType) {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("professional_type")
+          .eq("id", user.id)
+          .single();
+
+        if (!userProfile?.professional_type) {
+          return NextResponse.json(
+            { error: "Tipo de profissional não definido no perfil" },
+            { status: 400 },
+          );
+        }
+
+        professionalType = userProfile.professional_type;
+      }
+
       // Check if there's already a team member with this professional type
       const { data: existingMember } = await supabase
         .from("team_members")
         .select("id")
         .eq("patient_id", invite.patient_id)
-        .eq("professional_type", invite.professional_type)
+        .eq("professional_type", professionalType)
         .single();
 
       if (existingMember) {
         await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
         return NextResponse.json(
-          { error: `Já existe um ${invite.professional_type} na equipe desta paciente` },
+          { error: `Já existe um ${professionalType} na equipe desta paciente` },
           { status: 400 },
         );
       }
@@ -62,7 +82,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       const teamMemberData: TablesInsert<"team_members"> = {
         patient_id: invite.patient_id,
         professional_id: user.id,
-        professional_type: invite.professional_type,
+        professional_type: professionalType,
       };
 
       const { error: teamError } = await supabase.from("team_members").insert(teamMemberData);
@@ -75,11 +95,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       await supabase.from("team_invites").update({ status: "aceito" }).eq("id", id);
 
       return NextResponse.json({ success: true, message: "Convite aceito com sucesso" });
-    } else {
-      // Reject the invite
-      await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
-      return NextResponse.json({ success: true, message: "Convite rejeitado" });
     }
+
+    // Reject the invite
+    await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
+    return NextResponse.json({ success: true, message: "Convite rejeitado" });
   } catch {
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
   }

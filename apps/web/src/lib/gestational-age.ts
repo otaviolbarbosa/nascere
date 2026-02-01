@@ -29,3 +29,34 @@ export function calculateGestationalAge(
 
   return { weeks, days, totalDays, label };
 }
+
+export const calculateGestationalProgress = (dum: Date | string, referenceDate?: string | Date) => {
+  if (!dum) return 0;
+
+  const lmp = dayjs(dum);
+  const reference = dayjs(referenceDate ?? undefined);
+
+  if (!lmp.isValid()) return 0;
+  const total = 40 * 7; // 40 weeks x 7 days
+
+  const totalDays = reference.diff(lmp, "day");
+
+  return Math.round((totalDays * 100) / total);
+};
+
+export const calculateRemainingDays = (dpp: Date | string, referenceDate?: string) => {
+  if (!dpp) return 0;
+
+  const due_date = dayjs(dpp);
+  const reference = dayjs(referenceDate ?? undefined);
+
+  if (!due_date.isValid()) return 0;
+
+  const remainingDays = due_date.diff(reference, "day");
+
+  if (remainingDays < 0) {
+    return 0;
+  }
+
+  return remainingDays;
+};

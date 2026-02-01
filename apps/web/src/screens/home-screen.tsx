@@ -1,6 +1,7 @@
 "use client";
 import { Header } from "@/components/layouts/header";
 import { Card, CardContent } from "@/components/ui/card";
+import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 
 type HomeScreenProps = {
@@ -10,7 +11,7 @@ type HomeScreenProps = {
 export default function HomeScreen({ profile }: HomeScreenProps) {
   return (
     <div>
-      <Header title={`Olá, ${profile.name ?? "amiga!"}!`} />
+      <Header title={`Olá, ${getFirstName(profile.name) ?? "!"}!`} />
 
       <div className="space-y-2 px-4">
         <h1 className="font-medium font-poppins text-xl">Minhas Gestantes</h1>

@@ -1,14 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Users, Mail, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Avatar from "@/components/shared/avatar";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { Logo } from "@/components/shared/logo";
-import { getInitials } from "@/utils";
-import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { LogOut, Mail, Users } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 const navigation = [
   { name: "Pacientes", href: "/patients", icon: Users },
@@ -57,13 +56,7 @@ export function Sidebar() {
       {/* User section */}
       <div className="border-t p-4">
         <div className="mb-3 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border bg-primary-100 text-primary-700 overflow-hidden">
-            {profile?.avatar_url ? (
-              <Image src={profile.avatar_url} alt="User avatar" width={40} height={40} priority />
-            ) : (
-              getInitials(profile?.name)
-            )}
-          </div>
+          <Avatar className="size-10" />
           <div className="flex-1 truncate">
             <p className="truncate text-sm font-medium text-gray-900">{profile?.name}</p>
             <p className="truncate text-xs text-gray-500">{profile?.professional_type}</p>

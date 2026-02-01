@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,8 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -18,8 +17,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Loader2 } from "lucide-react";
 
-interface ConfirmDialogProps {
+interface ConfirmModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -31,7 +31,7 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
 }
 
-export function ConfirmDialog({
+export function ConfirmModal({
   open,
   onOpenChange,
   title,
@@ -41,7 +41,7 @@ export function ConfirmDialog({
   variant = "default",
   loading = false,
   onConfirm,
-}: ConfirmDialogProps) {
+}: ConfirmModalProps) {
   const isMobile = window.innerWidth < 640;
 
   return isMobile ? (

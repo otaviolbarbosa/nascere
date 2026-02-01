@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createPatientSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
-  phone: z.string().min(10, "Telefone inválido"),
+  phone: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Telefone inválido"),
   date_of_birth: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data de nascimento inválida",
   }),

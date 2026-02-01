@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { TablesInsert, Enums } from "@nascere/supabase/types";
+import type { Enums, TablesInsert } from "@nascere/supabase/types";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -19,7 +19,7 @@ export async function GET() {
       .from("team_invites")
       .select(`
         *,
-        patient:patients(id, name, due_date, gestational_week),
+        patient:patients(id, name, due_date, dum),
         inviter:users!team_invites_invited_by_fkey(name, professional_type)
       `)
       .eq("invited_professional_id", user.id)
@@ -52,29 +52,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { patient_id, invited_professional_id, professional_type } = body;
 
-    if (!patient_id || !invited_professional_id || !professional_type) {
+    if (!patient_id || !invited_professional_id) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
 
-    // Validate professional_type
+    // Validate professional_type if provided
     const validTypes: Enums<"professional_type">[] = ["obstetra", "enfermeiro", "doula"];
-    if (!validTypes.includes(professional_type)) {
+    if (professional_type && !validTypes.includes(professional_type)) {
       return NextResponse.json({ error: "Tipo de profissional inválido" }, { status: 400 });
     }
 
-    // Check if there's already a team member with this professional type
-    const { data: existingMember } = await supabase
-      .from("team_members")
-      .select("id")
-      .eq("patient_id", patient_id)
-      .eq("professional_type", professional_type)
-      .single();
+    // Check if there's already a team member with this professional type (only if type is provided)
+    if (professional_type) {
+      const { data: existingMember } = await supabase
+        .from("team_members")
+        .select("id")
+        .eq("patient_id", patient_id)
+        .eq("professional_type", professional_type)
+        .single();
 
-    if (existingMember) {
-      return NextResponse.json(
-        { error: `Já existe um ${professional_type} na equipe desta paciente` },
-        { status: 400 },
-      );
+      if (existingMember) {
+        return NextResponse.json(
+          { error: `Já existe um ${professional_type} na equipe desta paciente` },
+          { status: 400 },
+        );
+      }
     }
 
     // Check if there's already a pending invite
@@ -101,7 +103,9 @@ export async function POST(request: Request) {
       patient_id,
       invited_by: user.id,
       invited_professional_id,
-      professional_type: professional_type as Enums<"professional_type">,
+      professional_type: professional_type
+        ? (professional_type as Enums<"professional_type">)
+        : null,
       expires_at: expiresAt.toISOString(),
     };
 

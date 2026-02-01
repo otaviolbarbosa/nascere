@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@nascere/supabase/types";
-import { ChevronRight, CreditCard, Info, LogOut, Settings, Users } from "lucide-react";
+import { Bell, ChevronRight, CreditCard, Info, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -97,8 +97,16 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
             label="Configurações"
             href="/settings"
           />
-          <MenuItem icon={<CreditCard className="h-5 w-5" />} label="Assinatura" href="/billing" />
-          <MenuItem icon={<Users className="h-5 w-5" />} label="Gerenciar Usuários" href="/users" />
+          <MenuItem
+            icon={<CreditCard className="h-5 w-5" />}
+            label="Minha Assinatura"
+            href="/billing"
+          />
+          <MenuItem
+            icon={<Bell className="h-5 w-5" />}
+            label="Minha Notificações"
+            href="/notifications"
+          />
         </div>
 
         {/* Menu Section 2 */}

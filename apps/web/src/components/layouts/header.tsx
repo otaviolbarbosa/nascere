@@ -1,11 +1,9 @@
 "use client";
 
+import Avatar from "@/components/shared/avatar";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { getInitials } from "@/utils";
 import { Bell, ChevronLeft } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -18,7 +16,6 @@ interface HeaderProps {
 export function Header({ title, back }: HeaderProps) {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
-  const { profile } = useAuth();
 
   useEffect(() => {
     const scrollContainer = document.querySelector("main");
@@ -71,13 +68,8 @@ export function Header({ title, back }: HeaderProps) {
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notificações</span>
         </Button>
-        <Link href="/profile" className="size-9 overflow-hidden rounded-full md:hidden">
-          {profile?.avatar_url ? (
-            <Image src={profile.avatar_url} alt="User avatar" width={36} height={36} priority />
-          ) : (
-            getInitials(profile?.name)
-          )}
-
+        <Link href="/profile" className="md:hidden">
+          <Avatar />
           <span className="sr-only">Perfil</span>
         </Link>
       </div>

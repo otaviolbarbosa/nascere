@@ -3,9 +3,26 @@ import { cn } from "@/lib/utils";
 import { Home, Mail, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [hasPendingInvites, setHasPendingInvites] = useState(false);
+
+  useEffect(() => {
+    async function fetchInvites() {
+      try {
+        const response = await fetch("/api/team/invites");
+        if (response.ok) {
+          const data = await response.json();
+          setHasPendingInvites(data.invites?.length > 0);
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+    fetchInvites();
+  }, []);
 
   const navigation = [
     { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
@@ -15,8 +32,13 @@ export default function BottomNav() {
       icon: Users,
       isActive: pathname.startsWith("/patients"),
     },
-    // { name: "AI", href: "/ai", icon: BrainCircuit, isActive: pathname.startsWith("/ai") },
-    { name: "Convites", href: "/invites", icon: Mail, isActive: pathname.startsWith("/invites") },
+    {
+      name: "Convites",
+      href: "/invites",
+      icon: Mail,
+      isActive: pathname.startsWith("/invites"),
+      hasNewContent: hasPendingInvites,
+    },
     {
       name: "Ajustes",
       href: "/settings",
@@ -26,7 +48,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 w-full p-4 sm:hidden">
+    <div className="fixed bottom-2 w-full p-4 sm:hidden">
       <div className="flex justify-between gap-2 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
         {navigation.map((navItem) => {
           return (
@@ -34,9 +56,9 @@ export default function BottomNav() {
               key={`bottom-nav-tem-${navItem.name}`}
               href={navItem.href}
               className={cn(
-                "flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
+                "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
-                navItem.isActive && "size-auto flex-1 bg-primary px-4 shadow",
+                navItem.isActive && "size-auto flex-1 bg-primary px-4 opacity-100 shadow-md",
               )}
             >
               <navItem.icon
@@ -53,6 +75,9 @@ export default function BottomNav() {
               >
                 {navItem.name}
               </div>
+              {!navItem.isActive && navItem.hasNewContent && (
+                <div className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+              )}
             </Link>
           );
         })}

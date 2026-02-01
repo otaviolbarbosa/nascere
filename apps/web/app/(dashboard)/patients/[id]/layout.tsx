@@ -1,12 +1,13 @@
 "use client";
 
 import { Header } from "@/components/layouts/header";
+import GestationalProgressBar from "@/components/shared/gestational-progress-bar";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dayjs } from "@/lib/dayjs";
-import { calculateGestationalAge } from "@/lib/gestational-age";
+import { calculateGestationalAge, calculateRemainingDays } from "@/lib/gestational-age";
 import type { Tables } from "@nascere/supabase/types";
 import { Baby, Calendar } from "lucide-react";
 import Link from "next/link";
@@ -75,15 +76,33 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
           // title={patient.name}
           breadcrumbs={[{ label: "Gestantes", href: "/patients" }, { label: patient.name }]}
         />
-        <div className="flex items-stretch gap-2 mb-6">
+        <div className="mb-6 block flex flex-col gap-2 lg:flex-row">
           <Card className="flex-1">
             <CardHeader className="p-4 pb-0">
               <CardTitle>Idade Gestacional</CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="flex gap-2">
-                <Baby />
-                {calculateGestationalAge(patient.dum)?.label}
+            <CardContent className="flex items-center gap-6 p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-gray-200 p-4">
+                  <Baby />
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1">
+                    <span className="font-poppins font-semibold text-3xl">
+                      {calculateGestationalAge(patient.dum)?.weeks}
+                    </span>
+                    <span className="text-gray-500 text-sm">semanas</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-poppins font-semibold text-lg">
+                      {calculateGestationalAge(patient.dum)?.days}
+                    </span>{" "}
+                    <span className="text-gray-500 text-sm">dias</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1">
+                <GestationalProgressBar dum={patient.dum} />
               </div>
             </CardContent>
           </Card>
@@ -91,24 +110,40 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             <CardHeader className="p-4 pb-0">
               <CardTitle>DPP</CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="flex gap-2">
-                <Calendar />
-                {dayjs(patient.due_date).format("DD/MM/YYYY")}
+            <CardContent className="flex items-center p-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-gray-200 p-4">
+                  <Calendar />
+                </div>
+                <div className="font-poppins">
+                  <div className="text-center font-semibold text-2xl">
+                    {dayjs(patient.due_date).format("DD")}
+                  </div>
+                  <div className="text-center text-sm">
+                    {dayjs(patient.due_date).format("MMM").toUpperCase()}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-1 items-center justify-end gap-3 text-gray-500">
+                Faltam{" "}
+                <span className="font-poppins font-semibold text-3xl text-black">
+                  {calculateRemainingDays(patient.due_date)}
+                </span>{" "}
+                dias
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs value={currentTab} className="mb-6">
+        <Tabs value={currentTab} className="mb-6 w-full">
           <TabsList>
-            <Link href={`/patients/${patientId}/profile`}>
+            <Link href={`/patients/${patientId}/profile`} className="flex-1">
               <TabsTrigger value="profile">Perfil</TabsTrigger>
             </Link>
-            <Link href={`/patients/${patientId}/appointments`}>
-              <TabsTrigger value="appointments">Agendamentos</TabsTrigger>
+            <Link href={`/patients/${patientId}/appointments`} className="flex-1">
+              <TabsTrigger value="appointments">Agenda</TabsTrigger>
             </Link>
-            <Link href={`/patients/${patientId}/team`}>
+            <Link href={`/patients/${patientId}/team`} className="flex-1">
               <TabsTrigger value="team">Equipe</TabsTrigger>
             </Link>
           </TabsList>

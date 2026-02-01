@@ -190,7 +190,9 @@ export type Database = {
           invited_by: string
           invited_professional_id: string
           patient_id: string
-          professional_type: Database["public"]["Enums"]["professional_type"]
+          professional_type:
+            | Database["public"]["Enums"]["professional_type"]
+            | null
           status: string
         }
         Insert: {
@@ -200,7 +202,9 @@ export type Database = {
           invited_by: string
           invited_professional_id: string
           patient_id: string
-          professional_type: Database["public"]["Enums"]["professional_type"]
+          professional_type?:
+            | Database["public"]["Enums"]["professional_type"]
+            | null
           status?: string
         }
         Update: {
@@ -210,7 +214,9 @@ export type Database = {
           invited_by?: string
           invited_professional_id?: string
           patient_id?: string
-          professional_type?: Database["public"]["Enums"]["professional_type"]
+          professional_type?:
+            | Database["public"]["Enums"]["professional_type"]
+            | null
           status?: string
         }
         Relationships: [
@@ -323,6 +329,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_professional: { Args: never; Returns: boolean }
       is_team_member: { Args: { p_patient_id: string }; Returns: boolean }
     }
     Enums: {
