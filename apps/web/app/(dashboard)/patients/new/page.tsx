@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { InputMask } from "@react-input/mask";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -121,7 +122,13 @@ export default function NewPatientPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          <Input type="tel" placeholder="(11) 99999-9999" {...field} />
+                          {/* <Input type="tel" placeholder="(11) 99999-9999" {...field} /> */}
+                          <InputMask
+                            component={Input}
+                            mask="(__) _____-____"
+                            replacement={{ _: /\d/ }}
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
