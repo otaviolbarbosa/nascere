@@ -6,14 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
+import NewPatientModal from "@/modals/new-patient-modal";
 import type { Tables } from "@nascere/supabase";
 import { Baby, Plus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type PatientsScreenProps = {
   patients: Tables<"patients">[];
 };
 export default function PatientsScreen({ patients }: PatientsScreenProps) {
+  const router = useRouter();
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+
   return (
     <div>
       <Header title="Minhas Gestantes" />
@@ -22,12 +28,10 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           // title="Pacientes"
           description="Gerencie suas gestantes"
         >
-          <Link href="/patients/new">
-            <Button className="gradient-primary">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:block">Adicionar</span>
-            </Button>
-          </Link>
+          <Button className="gradient-primary" onClick={() => setShowNewPatientModal(true)}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:block">Adicionar</span>
+          </Button>
         </PageHeader>
 
         {patients.length === 0 ? (
@@ -36,12 +40,10 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
             title="Nenhuma paciente cadastrada"
             description="Comece cadastrando sua primeira paciente para acompanhar a gestação."
           >
-            <Link href="/patients/new">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Cadastrar Paciente
-              </Button>
-            </Link>
+            <Button onClick={() => setShowNewPatientModal(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Cadastrar Paciente
+            </Button>
           </EmptyState>
         ) : (
           <div className="space-y-3">
@@ -79,6 +81,12 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           </div>
         )}
       </div>
+
+      <NewPatientModal
+        showModal={showNewPatientModal}
+        setShowModal={setShowNewPatientModal}
+        callback={() => router.refresh()}
+      />
     </div>
   );
 }
