@@ -122,6 +122,45 @@ export type Database = {
           },
         ]
       }
+      patient_evolutions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          patient_id: string
+          professional_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          patient_id: string
+          professional_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          patient_id?: string
+          professional_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_evolutions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_evolutions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_invite_links: {
         Row: {
           created_at: string | null
