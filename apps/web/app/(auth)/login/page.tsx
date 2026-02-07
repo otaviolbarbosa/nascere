@@ -81,7 +81,7 @@ function LoginForm() {
       return;
     }
 
-    toast.success("Login realizado com sucesso!");
+    form.reset();
     router.push(redirectTo);
   }
 
