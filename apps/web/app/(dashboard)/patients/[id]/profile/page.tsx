@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { LoadingCard } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
+import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
 import {
   Accordion,
@@ -109,7 +110,7 @@ export default function PatientProfilePage() {
               Evolução da Paciente
             </AccordionTrigger>
             <AccordionContent>
-              <p className="text-muted-foreground">Em breve...</p>
+              <PatientEvolution patientId={patient.id} />
             </AccordionContent>
           </AccordionItem>
         </Accordion>
