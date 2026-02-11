@@ -21,8 +21,14 @@ export async function requestFcmToken(): Promise<string | null> {
   if (!messaging) return null;
 
   try {
+    const swRegistration = await navigator.serviceWorker.register(
+      "/firebase-messaging-sw.js",
+      { scope: "/firebase-cloud-messaging-push-scope" },
+    );
+
     const token = await getToken(messaging, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: swRegistration,
     });
     return token;
   } catch {
