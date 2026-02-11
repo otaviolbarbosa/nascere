@@ -1,9 +1,9 @@
 "use client";
 
-import { Bell, X } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
+import { Bell, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const COOLDOWN_KEY = "nascere_push_prompt_dismissed";
 const COOLDOWN_DAYS = 7;
@@ -13,6 +13,7 @@ export function NotificationPermissionPrompt() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    console.log("$$$", permissionStatus);
     if (typeof window === "undefined") return;
     if (!("Notification" in window)) return;
     if (permissionStatus !== "default") return;
