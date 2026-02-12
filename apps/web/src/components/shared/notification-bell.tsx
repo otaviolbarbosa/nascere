@@ -1,13 +1,13 @@
 "use client";
 
-import { Bell } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { NotificationItem } from "./notification-item";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { Notification } from "@/services/notification";
+import { Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { NotificationItem } from "./notification-item";
 
 export function NotificationBell() {
   const router = useRouter();
@@ -79,9 +79,7 @@ export function NotificationBell() {
         </div>
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-gray-500 text-sm">
-              Nenhuma notificação
-            </p>
+            <p className="px-4 py-8 text-center text-gray-500 text-sm">Nenhuma notificação</p>
           ) : (
             <div className="divide-y">
               {notifications.map((n) => (
@@ -94,17 +92,17 @@ export function NotificationBell() {
             </div>
           )}
         </div>
-        <div className="border-t px-4 py-2">
-          <button
-            type="button"
+        <div className="border-t px-4 py-2 text-right">
+          <Button
+            className="gradient-primary"
             onClick={() => {
               setOpen(false);
               router.push("/notifications");
             }}
-            className="w-full text-center text-primary text-sm hover:underline"
+            // className="w-full text-center text-primary text-sm hover:underline"
           >
             Ver todas
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

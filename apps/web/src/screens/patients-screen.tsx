@@ -28,7 +28,18 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           // title="Pacientes"
           description="Gerencie suas gestantes"
         >
-          <Button className="gradient-primary" onClick={() => setShowNewPatientModal(true)}>
+          <Button
+            size="icon"
+            className="gradient-primary flex sm:hidden"
+            onClick={() => setShowNewPatientModal(true)}
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:block">Adicionar</span>
+          </Button>
+          <Button
+            className="gradient-primary hidden sm:flex"
+            onClick={() => setShowNewPatientModal(true)}
+          >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:block">Adicionar</span>
           </Button>
