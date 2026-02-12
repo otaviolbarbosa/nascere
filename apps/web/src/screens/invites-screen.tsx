@@ -109,7 +109,7 @@ export default function InvitesScreen({ invites }: InvistesScreenProps) {
                         <Button
                           onClick={() => handleAction(invite.id, "accept")}
                           disabled={processingId === invite.id}
-                          className="flex-1"
+                          className="gradient-primary flex-1"
                         >
                           Aceitar
                         </Button>
