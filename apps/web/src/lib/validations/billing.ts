@@ -41,7 +41,7 @@ export const createBillingSchema = z.object({
     message: "Data de vencimento inválida",
   }),
   payment_links: z
-    .array(z.string().url("URL de pagamento inválida"))
+    .array(z.union([z.string().url("URL de pagamento inválida"), z.literal("")]))
     .max(10, "Máximo de 10 links de pagamento")
     .optional(),
   notes: z.string().max(500, "Observações devem ter no máximo 500 caracteres").optional(),

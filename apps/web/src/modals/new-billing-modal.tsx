@@ -20,12 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  type CreateBillingInput,
-  createBillingSchema,
-} from "@/lib/validations/billing";
+import { type CreateBillingInput, createBillingSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -60,6 +57,8 @@ export default function NewBillingModal({
     },
   });
 
+  console.log(form.formState);
+
   const installmentCount = form.watch("installment_count");
 
   const { fields, replace } = useFieldArray({
@@ -72,10 +71,7 @@ export default function NewBillingModal({
     const currentLinks = form.getValues("payment_links") || [];
     const count = installmentCount || 1;
     if (currentLinks.length !== count) {
-      const newLinks = Array.from(
-        { length: count },
-        (_, i) => currentLinks[i] || "",
-      );
+      const newLinks = Array.from({ length: count }, (_, i) => currentLinks[i] || "");
       replace(newLinks as never[]);
     }
   }, [installmentCount, form, replace]);
@@ -105,9 +101,7 @@ export default function NewBillingModal({
       callback?.();
       setShowModal(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Erro ao criar cobrança",
-      );
+      toast.error(error instanceof Error ? error.message : "Erro ao criar cobrança");
     } finally {
       setIsSubmitting(false);
     }
@@ -160,10 +154,7 @@ export default function NewBillingModal({
               <FormItem>
                 <FormLabel>Valor Total</FormLabel>
                 <FormControl>
-                  <CurrencyInput
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
+                  <CurrencyInput value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -267,7 +258,7 @@ export default function NewBillingModal({
             )}
           />
 
-          {fields.length > 0 && (
+          {/* {fields.length > 0 && (
             <div className="space-y-2">
               <FormLabel>Links de Pagamento (opcional)</FormLabel>
               {fields.map((field, index) => (
@@ -294,7 +285,7 @@ export default function NewBillingModal({
                 </div>
               ))}
             </div>
-          )}
+          )} */}
 
           <FormField
             control={form.control}
@@ -303,11 +294,7 @@ export default function NewBillingModal({
               <FormItem>
                 <FormLabel>Observações (opcional)</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="Notas sobre a cobrança"
-                    rows={3}
-                    {...field}
-                  />
+                  <Textarea placeholder="Notas sobre a cobrança" rows={3} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -323,14 +310,8 @@ export default function NewBillingModal({
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="gradient-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar
             </Button>
           </div>
