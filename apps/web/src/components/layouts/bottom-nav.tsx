@@ -1,14 +1,16 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Calendar, DollarSign, Home, Mail, Users } from "lucide-react";
+import { Calendar, DollarSign, Ellipsis, Home, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Avatar from "../shared/avatar";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const [hasPendingInvites, setHasPendingInvites] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchInvites() {
@@ -25,9 +27,25 @@ export default function BottomNav() {
     fetchInvites();
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    if (moreOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [moreOpen]);
+
+  const handleMoreToggle = useCallback(() => {
+    setMoreOpen((prev) => !prev);
+  }, []);
+
   const isProfileActive = pathname.startsWith("/profile");
 
-  const navigation = [
+  const mainNav = [
     { name: "Início", href: "/home", icon: Home, isActive: pathname.startsWith("/home") },
     {
       name: "Gestantes",
@@ -47,6 +65,9 @@ export default function BottomNav() {
       icon: DollarSign,
       isActive: pathname.startsWith("/billing"),
     },
+  ];
+
+  const overflowNav = [
     {
       name: "Convites",
       href: "/invites",
@@ -56,13 +77,69 @@ export default function BottomNav() {
     },
   ];
 
+  const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
+
   return (
     <div className="fixed bottom-2 w-full p-4 sm:hidden">
-      <div className="flex justify-between gap-2 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
-        {navigation.map((navItem) => {
-          return (
+      <div ref={moreRef} className="relative">
+        {moreOpen && (
+          <div className="absolute right-2 bottom-full mb-2 flex flex-col gap-1.5 rounded-2xl border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
+            {overflowNav.map((navItem) => (
+              <Link
+                key={`overflow-nav-${navItem.name}`}
+                href={navItem.href}
+                onClick={() => setMoreOpen(false)}
+                className={cn(
+                  "relative flex h-12 items-center gap-3 rounded-full border border-primary/20 bg-white px-4",
+                  "transition-all duration-500 ease-out",
+                  navItem.isActive && "gradient-primary shadow-md",
+                )}
+              >
+                <navItem.icon
+                  className={cn(
+                    "size-5 text-primary transition-colors duration-500 ease-out",
+                    navItem.isActive && "text-white",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "font-medium font-poppins text-primary text-xs",
+                    navItem.isActive && "text-white",
+                  )}
+                >
+                  {navItem.name}
+                </span>
+                {!navItem.isActive && navItem.hasNewContent && (
+                  <div className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+                )}
+              </Link>
+            ))}
             <Link
-              key={`bottom-nav-tem-${navItem.name}`}
+              href="/profile"
+              onClick={() => setMoreOpen(false)}
+              className={cn(
+                "relative flex h-12 items-center gap-3 rounded-full border border-primary/20 bg-white px-4",
+                "transition-all duration-500 ease-out",
+                isProfileActive && "gradient-primary shadow-md",
+              )}
+            >
+              <Avatar size={8} className="border-none" />
+              <span
+                className={cn(
+                  "font-medium font-poppins text-primary text-xs",
+                  isProfileActive && "text-white",
+                )}
+              >
+                Perfil
+              </span>
+            </Link>
+          </div>
+        )}
+
+        <div className="flex justify-between gap-2 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
+          {mainNav.map((navItem) => (
+            <Link
+              key={`bottom-nav-${navItem.name}`}
               href={navItem.href}
               className={cn(
                 "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
@@ -85,30 +162,27 @@ export default function BottomNav() {
               >
                 {navItem.name}
               </div>
-              {!navItem.isActive && navItem.hasNewContent && (
-                <div className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-red-500" />
-              )}
             </Link>
-          );
-        })}
-        <Link
-          href="/profile"
-          className={cn(
-            "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
-            "transition-all duration-500 ease-out",
-            isProfileActive && "gradient-primary size-auto flex-1 pr-4 pl-0 opacity-100 shadow-md",
-          )}
-        >
-          <Avatar size={12} className="border-none" />
-          <div
+          ))}
+          <button
+            type="button"
+            onClick={handleMoreToggle}
             className={cn(
-              "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
-              isProfileActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
+              "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
+              "transition-all duration-500 ease-out",
+              isOverflowActive && !moreOpen && "border-primary/40",
             )}
           >
-            Profile
-          </div>
-        </Link>
+            <Ellipsis
+              className={cn(
+                "size-5 text-primary transition-colors duration-500 ease-out",
+              )}
+            />
+            {hasPendingInvites && !moreOpen && (
+              <div className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-red-500" />
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -170,8 +170,10 @@ export default function BillingDetailPage() {
       </div>
 
       <InstallmentList
+        billingId={billingId}
         installments={billing.installments}
         onRecordPayment={handleRecordPayment}
+        onUpdate={fetchBilling}
       />
 
       <RecordPaymentModal
