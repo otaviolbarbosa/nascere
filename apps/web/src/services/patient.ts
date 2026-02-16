@@ -1,3 +1,4 @@
+import type { PatientFilter } from "@/types";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
 
@@ -8,7 +9,7 @@ type GetMyPatientsResult = {
   error?: string;
 };
 
-export async function getMyPatients(): Promise<GetMyPatientsResult> {
+export async function getMyPatients(filter: PatientFilter = "all", search = ""): Promise<GetMyPatientsResult> {
   const supabase = await createServerSupabaseClient();
 
   const {
@@ -31,13 +32,13 @@ export async function getMyPatients(): Promise<GetMyPatientsResult> {
     return { patients: [] };
   }
 
-  const { data: patients } = await supabase
-    .from("patients")
-    .select("*")
-    .in("id", patientIds)
-    .order("due_date", { ascending: true });
+  const { data: patients } = await supabase.rpc("get_filtered_patients", {
+    patient_ids: patientIds,
+    filter_type: filter,
+    search_query: search,
+  });
 
-  return { patients: patients || [] };
+  return { patients: (patients as Patient[]) || [] };
 }
 
 export async function getPatientById(patientId: string): Promise<Patient | null> {

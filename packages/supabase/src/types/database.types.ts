@@ -846,6 +846,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gestational_weeks: { Args: { dum: string }; Returns: number }
+      get_filtered_patients: {
+        Args: {
+          filter_type?: string
+          patient_ids: string[]
+          search_query?: string
+        }
+        Returns: {
+          address: string | null
+          created_at: string | null
+          created_by: string
+          date_of_birth: string
+          due_date: string
+          dum: string | null
+          email: string
+          id: string
+          name: string
+          observations: string | null
+          phone: string
+          updated_at: string | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "patients"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       is_professional: { Args: never; Returns: boolean }
       is_team_member: { Args: { p_patient_id: string }; Returns: boolean }
       process_scheduled_notifications: { Args: never; Returns: undefined }

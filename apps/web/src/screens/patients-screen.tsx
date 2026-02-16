@@ -6,60 +6,83 @@ import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { calculateGestationalAge } from "@/lib/gestational-age";
+import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
+import type { PatientFilter } from "@/types";
 import type { Tables } from "@nascere/supabase";
-import { Baby, ListFilter, Plus, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Baby, Check, ListFilter, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-type TrimesterFilter = "1t" | "2t" | "3t" | "termo";
-
-const FILTER_OPTIONS: { key: TrimesterFilter; label: string }[] = [
-  { key: "1t", label: "1º Trimestre" },
-  { key: "2t", label: "2º Trimestre" },
-  { key: "3t", label: "3º Trimestre" },
-  { key: "termo", label: "A termo" },
+const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
+  { key: "all", label: "Todas" },
+  { key: "recent", label: "Recentes" },
+  { key: "trim1", label: "1º Trimestre" },
+  { key: "trim2", label: "2º Trimestre" },
+  { key: "trim3", label: "3º Trimestre" },
+  { key: "final", label: "A termo" },
 ];
-
-function getWeeks(dum: string | null | undefined): number | null {
-  const age = calculateGestationalAge(dum);
-  return age ? age.weeks : null;
-}
-
-function matchesFilter(weeks: number | null, filter: TrimesterFilter): boolean {
-  if (weeks === null) return false;
-  switch (filter) {
-    case "1t":
-      return weeks < 14;
-    case "2t":
-      return weeks >= 14 && weeks < 28;
-    case "3t":
-      return weeks >= 28;
-    case "termo":
-      return weeks >= 37;
-  }
-}
 
 type PatientsScreenProps = {
   patients: Tables<"patients">[];
+  initialFilter: PatientFilter;
+  initialSearch: string;
 };
 
-export default function PatientsScreen({ patients }: PatientsScreenProps) {
+export default function PatientsScreen({ patients, initialFilter, initialSearch }: PatientsScreenProps) {
   const router = useRouter();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<TrimesterFilter | null>(null);
+  const [activeFilter, setActiveFilter] = useState<PatientFilter>(initialFilter);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [showFilters, setShowFilters] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleFilterClick = (filter: TrimesterFilter) => {
-    setActiveFilter((prev) => (prev === filter ? null : filter));
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setShowFilters(false);
+      }
+    }
+    if (showFilters) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showFilters]);
+
+  const handleFilterToggle = useCallback(() => {
+    setShowFilters((prev) => !prev);
+  }, []);
+
+  const buildUrl = useCallback((filter: PatientFilter, search: string) => {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("filter", filter);
+    if (search) params.set("search", search);
+    const qs = params.toString();
+    return qs ? `/patients?${qs}` : "/patients";
+  }, []);
+
+  const handleFilterClick = (filter: PatientFilter) => {
+    setActiveFilter(filter);
     setShowFilters(false);
+    router.push(buildUrl(filter, searchQuery));
   };
 
-  const filteredPatients = useMemo(() => {
-    if (!activeFilter) return patients;
-    return patients.filter((p) => matchesFilter(getWeeks(p.dum), activeFilter));
-  }, [patients, activeFilter]);
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      router.push(buildUrl(activeFilter, value));
+    }, 400);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, []);
 
   const activeLabel = FILTER_OPTIONS.find((o) => o.key === activeFilter)?.label;
 
@@ -67,9 +90,7 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
     <div>
       <Header title="Minhas Gestantes" />
       <div className="p-4 pt-0 md:p-6">
-        <PageHeader
-          description="Gerencie suas gestantes"
-        >
+        <PageHeader description="Gerencie suas gestantes">
           <div className="flex gap-2">
             <Button
               size="icon"
@@ -86,45 +107,68 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
               <Plus className="size-4" />
               <span className="hidden sm:block">Adicionar</span>
             </Button>
-            <Button
-              size="icon"
-              variant={activeFilter ? "default" : "outline"}
-              className="flex"
-              onClick={() => setShowFilters((prev) => !prev)}
-            >
-              <ListFilter className="size-4" />
-            </Button>
+            <div ref={filterRef} className="relative">
+              <Button
+                size="icon"
+                variant={activeFilter !== "all" ? "default" : "outline"}
+                className="flex"
+                onClick={handleFilterToggle}
+              >
+                <ListFilter className="size-4" />
+              </Button>
+              <div
+                className={cn(
+                  "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                  showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                )}
+              >
+                {FILTER_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => handleFilterClick(option.key)}
+                    className={cn(
+                      "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                      activeFilter === option.key && "font-medium text-primary",
+                    )}
+                  >
+                    <Check
+                      className={cn(
+                        "size-4 shrink-0",
+                        activeFilter === option.key ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </PageHeader>
 
-        {showFilters && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {FILTER_OPTIONS.map((option) => (
-              <Badge
-                key={option.key}
-                variant={activeFilter === option.key ? "default" : "outline"}
-                className="cursor-pointer px-3 py-1.5 text-sm"
-                onClick={() => handleFilterClick(option.key)}
-              >
-                {option.label}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        {activeFilter && !showFilters && (
+        {activeFilter !== "all" && (
           <div className="mb-4 flex items-center gap-2">
             <Badge variant="default" className="gap-1 px-3 py-1.5 text-sm">
               {activeLabel}
-              <button type="button" onClick={() => setActiveFilter(null)}>
+              <button type="button" onClick={() => handleFilterClick("all")}>
                 <X className="size-3" />
               </button>
             </Badge>
           </div>
         )}
 
-        {filteredPatients.length === 0 ? (
-          activeFilter ? (
+        <div className="relative mb-4">
+          <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            className="h-11 rounded-full pl-10"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+        </div>
+
+        {patients.length === 0 ? (
+          activeFilter !== "all" ? (
             <EmptyState
               icon={Baby}
               title="Nenhuma gestante encontrada"
@@ -144,7 +188,7 @@ export default function PatientsScreen({ patients }: PatientsScreenProps) {
           )
         ) : (
           <div className="space-y-3">
-            {filteredPatients.map((patient) => {
+            {patients.map((patient) => {
               const weekInfo = calculateGestationalAge(patient?.dum);
               return (
                 <Link key={patient.id} href={`/patients/${patient.id}`} className="block">

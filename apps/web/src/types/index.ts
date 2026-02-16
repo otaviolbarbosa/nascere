@@ -30,3 +30,5 @@ export type PatientWithGestationalInfo = Tables<"patients"> & {
   remainingDays: number;
   progress: number;
 };
+
+export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final";
