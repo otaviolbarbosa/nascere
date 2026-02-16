@@ -1,3 +1,5 @@
+import type { Tables } from "@nascere/supabase";
+
 export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
 export type Invite = {
   id: string;
@@ -20,4 +22,11 @@ export type Professional = {
   name: string;
   email: string;
   professional_type: ProfessionalType | null;
+};
+
+export type PatientWithGestationalInfo = Tables<"patients"> & {
+  weeks: number;
+  days: number;
+  remainingDays: number;
+  progress: number;
 };

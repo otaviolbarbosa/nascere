@@ -1,5 +1,6 @@
 "use client";
 
+import { PatientCard } from "@/components/shared/patient-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,10 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { HomeAppointment, HomeData, PatientWithGestationalInfo } from "@/services/home";
-import { getFirstName, getInitials } from "@/utils";
+import type { HomeAppointment, HomeData } from "@/services/home";
+import type { PatientWithGestationalInfo } from "@/types";
+import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
-import { Activity, Baby, Bell, Heart, MoreHorizontal, Plus, Search, SmilePlus } from "lucide-react";
+import { Activity, Baby, Bell, Heart, Plus, Search, SmilePlus } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -42,49 +44,6 @@ function PatientCardSkeleton() {
         <Skeleton className="mt-2 h-2 w-full rounded-full" />
       </div>
     </div>
-  );
-}
-
-function PatientCard({ patient }: { patient: PatientWithGestationalInfo }) {
-  const dppFormatted = dayjs(patient.due_date).format("DD/MM/YYYY");
-  const statusColor =
-    patient.weeks >= 37 ? "bg-orange-400" : patient.weeks >= 28 ? "bg-blue-400" : "bg-green-400";
-
-  return (
-    <Link
-      href={`/patients/${patient.id}`}
-      className="flex items-center gap-4 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/50"
-    >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-100 font-semibold text-primary-700">
-        {getInitials(patient.name)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <h4 className="font-medium">{patient.name}</h4>
-          <button
-            type="button"
-            className="rounded-full p-1 text-muted-foreground hover:bg-muted"
-            onClick={(e) => e.preventDefault()}
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </button>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          DPP: {dppFormatted} &bull;{" "}
-          <span className="text-rose-500">{patient.remainingDays} dias restantes</span>
-        </p>
-        <div className="mt-2 flex items-center gap-2">
-          <div className={`h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
-          <div className="relative flex-1 overflow-hidden rounded-full bg-muted p-0.5">
-            <div
-              className="inset-y-0 left-0 h-2 rounded-full bg-primary"
-              style={{ width: `${patient.progress}%` }}
-            />
-          </div>
-          <span className="text-muted-foreground text-xs">{patient.weeks} Semanas</span>
-        </div>
-      </div>
-    </Link>
   );
 }
 
