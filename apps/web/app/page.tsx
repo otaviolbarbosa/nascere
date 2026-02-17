@@ -8,19 +8,19 @@ import Link from "next/link";
 export default function HomePage() {
   const benefits = [
     {
-      icon: <Baby className="mb-2 h-10 w-10 text-muted-foreground" />,
+      icon: <Baby className="mb-2 h-10 w-10 text-primary" />,
       title: "Gestão de Pacientes",
       description:
         "Cadastre gestantes, acompanhe semanas gestacionais e mantenha todas as informações organizadas.",
     },
     {
-      icon: <Calendar className="mb-2 h-10 w-10 text-muted-foreground" />,
+      icon: <Calendar className="mb-2 h-10 w-10 text-primary" />,
       title: "Agendamentos",
       description:
         "Organize consultas e encontros, com histórico completo de atendimentos para cada paciente.",
     },
     {
-      icon: <Users className="h-10 w-10 text-muted-foreground" />,
+      icon: <Users className="h-10 w-10 text-primary" />,
       title: "Equipe Multidisciplinar",
       description:
         "Convide obstetras, enfermeiros e doulas para colaborar no cuidado de cada gestante.",
