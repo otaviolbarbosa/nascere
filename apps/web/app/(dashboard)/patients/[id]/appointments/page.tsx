@@ -18,14 +18,12 @@ type Appointment = Tables<"appointments"> & {
 
 type Patient = Tables<"patients">;
 
-const statusLabels: Record<
-  string,
-  { label: string; variant: "success" | "secondary" | "destructive" }
-> = {
-  agendada: { label: "Agendada", variant: "success" },
-  realizada: { label: "Realizada", variant: "secondary" },
-  cancelada: { label: "Cancelada", variant: "destructive" },
-};
+const statusLabels: Record<string, { label: string; variant: "info" | "success" | "destructive" }> =
+  {
+    agendada: { label: "Agendada", variant: "info" },
+    realizada: { label: "Realizada", variant: "success" },
+    cancelada: { label: "Cancelada", variant: "destructive" },
+  };
 
 const typeLabels: Record<string, string> = {
   consulta: "Consulta",
@@ -109,7 +107,7 @@ export default function PatientAppointmentsPage() {
           {appointments.map((appointment) => {
             const status = statusLabels[appointment.status] ?? {
               label: appointment.status,
-              variant: "default" as const,
+              variant: "info" as const,
             };
             return (
               <Card key={appointment.id}>
