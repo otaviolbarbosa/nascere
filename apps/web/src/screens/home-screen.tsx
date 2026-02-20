@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { HomeAppointment, HomeData } from "@/services/home";
 import type { PatientWithGestationalInfo } from "@/types";
@@ -60,7 +61,10 @@ function PatientCardSkeleton() {
   );
 }
 
-function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[] }) {
+function AppointmentTimeline({
+  appointments,
+  onNewAppointment,
+}: { appointments: HomeAppointment[]; onNewAppointment: () => void }) {
   const today = dayjs().format("YYYY-MM-DD");
 
   function formatAppointmentDate(date: string) {
@@ -77,7 +81,7 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
 
   return (
     <Card className="h-fit">
-      <CardContent className="p-5">
+      <CardContent className="space-y-4 p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-poppins font-semibold text-lg leading-tight">Próximos Encontros</h3>
           <Link
@@ -89,7 +93,9 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
         </div>
 
         {appointments.length === 0 ? (
-          <p className="py-4 text-center text-muted-foreground text-sm">Nenhum encontro agendado</p>
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <p className="text-muted-foreground text-sm">Sua agenda está livre.</p>
+          </div>
         ) : (
           <div className="space-y-0">
             {appointments.map((appointment, index) => (
@@ -126,6 +132,12 @@ function AppointmentTimeline({ appointments }: { appointments: HomeAppointment[]
             ))}
           </div>
         )}
+        <div className="text-center">
+          <Button size="sm" variant="outline" onClick={onNewAppointment}>
+            <Plus className="mr-1 h-3.5 w-3.5" />
+            Agendar consulta
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -148,6 +160,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const [patients, setPatients] = useState<PatientWithGestationalInfo[]>(initialPatients);
   const [isLoading, setIsLoading] = useState(false);
   const [showNewPatient, setShowNewPatient] = useState(false);
+  const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -399,13 +412,19 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
 
           {/* Right: Upcoming Appointments */}
           <div className="hidden lg:block">
-            <AppointmentTimeline appointments={upcomingAppointments} />
+            <AppointmentTimeline
+              appointments={upcomingAppointments}
+              onNewAppointment={() => setShowNewAppointment(true)}
+            />
           </div>
         </div>
 
         {/* Mobile: Upcoming Appointments */}
         <div className="lg:hidden">
-          <AppointmentTimeline appointments={upcomingAppointments} />
+          <AppointmentTimeline
+            appointments={upcomingAppointments}
+            onNewAppointment={() => setShowNewAppointment(true)}
+          />
         </div>
       </div>
 
@@ -413,6 +432,11 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
         showModal={showNewPatient}
         setShowModal={setShowNewPatient}
         callback={() => fetchPatients(activeFilter, searchQuery)}
+      />
+      <NewAppointmentModal
+        patients={patients}
+        showModal={showNewAppointment}
+        setShowModal={setShowNewAppointment}
       />
     </div>
   );
