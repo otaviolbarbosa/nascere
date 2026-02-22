@@ -28,7 +28,7 @@ type MetricsProps = {
 
 export function DashboardMetrics({ metrics, activeFilter, onFilterClick }: MetricsProps) {
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+    <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
       {metrics.map((metric) => {
         const isActive = activeFilter === metric.key;
         const styles = METRIC_STYLES[metric.key];
