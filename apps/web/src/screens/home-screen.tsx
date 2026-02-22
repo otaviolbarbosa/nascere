@@ -19,13 +19,14 @@ import {
   Activity,
   Baby,
   Bell,
+  CalendarPlus,
   Check,
   Eye,
   Heart,
   ListFilter,
-  Plus,
   Search,
   SmilePlus,
+  UserPlusIcon,
   X,
 } from "lucide-react";
 import { redirect } from "next/navigation";
@@ -87,38 +88,28 @@ function AppointmentTimeline({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-poppins font-semibold text-xl">Próximos Encontros</h2>
+        <h2 className="font-poppins font-semibold text-xl">Agenda</h2>
         <div className="flex items-center gap-2">
           <Button size="icon" variant="outline" onClick={handleOpenAppointments}>
             <Eye />
-            {/* Agendar consulta */}
           </Button>
-          <Button
-            size="icon"
-            // variant="outline"
-            onClick={onNewAppointment}
-            className="gradient-primary"
-          >
-            <Plus />
-            {/* Agendar consulta */}
+          <Button size="icon" onClick={onNewAppointment} className="gradient-primary">
+            <CalendarPlus />
           </Button>
         </div>
       </div>
       <Card className="h-fit">
-        <CardContent className="space-y-4 p-5">
-          {/* <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-poppins font-semibold text-lg leading-tight">Próximos Encontros</h3>
-            <Link
-              href="/appointments"
-              className="font-semibold text-primary text-xs uppercase tracking-wide hover:underline"
-            >
-              Ver todos
-            </Link>
-          </div> */}
-
+        <CardContent className="space-y-4">
           {appointments.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="flex flex-col items-center gap-2 text-center">
               <p className="text-muted-foreground text-sm">Sua agenda está livre.</p>
+              <p className="text-muted-foreground text-sm">
+                Aproveite para adicionar um novo agendamento.
+              </p>
+              <Button className="gradient-primary mt-4" onClick={onNewAppointment}>
+                <CalendarPlus />
+                Novo Agendamento
+              </Button>
             </div>
           ) : (
             <div className="space-y-0">
@@ -297,7 +288,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
 
       <div className="flex flex-1 flex-col space-y-6 px-4 pt-4 pb-28 sm:pb-4 md:px-8">
         {/* Trimester Cards */}
-        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {trimesterCards.map((card) => (
             <Card key={card.label} className="w-52 shrink-0 sm:w-auto">
               <CardContent className="flex items-center justify-between p-4">
@@ -332,28 +323,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     </button>
                   </Badge>
                 )}
-                <Button
-                  className="gradient-primary hidden gap-2 md:flex"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Nova Gestante
-                </Button>
-                {/* Mobile: only + icon */}
-                <Button
-                  className="gradient-primary md:hidden"
-                  size="icon"
-                  onClick={() => setShowNewPatient(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
 
                 <Button
                   size="icon"
                   variant={showSearch ? "secondary" : "outline"}
                   onClick={handleSearchToggle}
                 >
-                  {showSearch ? <X className="size-4" /> : <Search className="size-4" />}
+                  {showSearch ? <X /> : <Search />}
                 </Button>
                 <div ref={filterRef} className="relative">
                   <Button
@@ -361,7 +337,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     variant={activeFilter !== "all" ? "secondary" : "outline"}
                     onClick={handleFilterToggle}
                   >
-                    <ListFilter className="size-4" />
+                    <ListFilter />
                   </Button>
                   <div
                     className={cn(
@@ -390,6 +366,21 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     ))}
                   </div>
                 </div>
+                <Button
+                  className="gradient-primary hidden gap-2 md:flex"
+                  onClick={() => setShowNewPatient(true)}
+                >
+                  <UserPlusIcon />
+                  Nova Gestante
+                </Button>
+                {/* Mobile: only + icon */}
+                <Button
+                  className="gradient-primary md:hidden"
+                  size="icon"
+                  onClick={() => setShowNewPatient(true)}
+                >
+                  <UserPlusIcon />
+                </Button>
               </div>
             </div>
 
