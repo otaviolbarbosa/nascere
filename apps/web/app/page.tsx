@@ -2,10 +2,14 @@ import heroBG from "@/assets/hero-bg.jpg";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getCurrentUser } from "@/services";
 import { ArrowRight, Baby, Calendar, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-export default function HomePage() {
+
+export default async function HomePage() {
+  const user = await getCurrentUser();
+
   const benefits = [
     {
       icon: <Baby className="mb-2 h-10 w-10 text-primary" />,
@@ -33,12 +37,20 @@ export default function HomePage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo href="/" size="xl" />
           <nav className="flex items-center space-x-4">
-            <Link href="/login">
-              <Button variant="ghost">Entrar</Button>
-            </Link>
-            <Link href="/register">
-              <Button className="gradient-primary shadow-soft">Cadastrar</Button>
-            </Link>
+            {user ? (
+              <Link href="/home">
+                <Button className="gradient-primary shadow-soft">Acessar Painel</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost">Entrar</Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="gradient-primary shadow-soft">Cadastrar</Button>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </header>

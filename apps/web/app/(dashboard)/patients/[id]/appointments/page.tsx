@@ -8,7 +8,7 @@ import { dayjs } from "@/lib/dayjs";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@nascere/supabase/types";
-import { Calendar, Clock, MapPin, Plus } from "lucide-react";
+import { Calendar, CalendarPlus, Clock, MapPin, Plus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -75,7 +75,7 @@ export default function PatientAppointmentsPage() {
           title="Nenhum agendamento"
           description="Ainda não há agendamentos para esta paciente."
         >
-          <Button onClick={handleOpenNewModal}>
+          <Button className="gradient-primary" onClick={handleOpenNewModal}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
           </Button>
@@ -97,8 +97,15 @@ export default function PatientAppointmentsPage() {
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-semibold text-lg">Agenda</h2>
-          <Button className="gradient-primary" onClick={handleOpenNewModal}>
-            <Plus className="h-4 w-4" />
+          <Button
+            size="icon"
+            className="gradient-primary flex md:hidden"
+            onClick={handleOpenNewModal}
+          >
+            <CalendarPlus className="h-4 w-4" />
+          </Button>
+          <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
+            <CalendarPlus className="h-4 w-4" />
             <span className="ml-2 hidden sm:block">Novo Agendamento</span>
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
 import type { TablesInsert } from "@nascere/supabase/types";
 import { NextResponse } from "next/server";
 
@@ -23,28 +23,27 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
     }
 
-    // Get the invite
-    const { data: invite, error: inviteError } = await supabase
+    // Get the invite — use admin to bypass RLS (link-based invites have no invited_professional_id)
+    const { data: invite, error: inviteError } = await supabaseAdmin
       .from("team_invites")
-      .select("*")
+      .select()
       .eq("id", id)
-      .eq("invited_professional_id", user.id)
       .eq("status", "pendente")
-      .single();
+      .limit(1);
 
-    if (inviteError || !invite) {
+    if (inviteError || !invite?.[0]) {
       return NextResponse.json({ error: "Convite não encontrado" }, { status: 404 });
     }
 
     // Check if invite has expired
-    if (new Date(invite.expires_at) < new Date()) {
+    if (new Date(invite[0].expires_at) < new Date()) {
       await supabase.from("team_invites").update({ status: "expirado" }).eq("id", id);
       return NextResponse.json({ error: "Convite expirado" }, { status: 400 });
     }
 
     if (action === "accept") {
       // Get professional_type from invite or from user profile
-      let professionalType = invite.professional_type;
+      let professionalType = invite[0].professional_type;
 
       if (!professionalType) {
         const { data: userProfile } = await supabase
@@ -67,7 +66,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       const { data: existingMember } = await supabase
         .from("team_members")
         .select("id")
-        .eq("patient_id", invite.patient_id)
+        .eq("patient_id", invite[0].patient_id)
         .eq("professional_type", professionalType)
         .single();
 
@@ -81,7 +80,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
       // Add user to team
       const teamMemberData: TablesInsert<"team_members"> = {
-        patient_id: invite.patient_id,
+        patient_id: invite[0].patient_id,
         professional_id: user.id,
         professional_type: professionalType,
       };
@@ -99,7 +98,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Reject the invite
-    await supabase.from("team_invites").update({ status: "rejeitado" }).eq("id", id);
+    await supabaseAdmin
+      .from("team_invites")
+      .update({
+        invited_professional_id: user.id,
+        professional_type: user.user_metadata.professional_type,
+        status: "rejeitado",
+      })
+      .eq("id", id);
+
     return NextResponse.json({ success: true, message: "Convite rejeitado" });
   } catch {
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });

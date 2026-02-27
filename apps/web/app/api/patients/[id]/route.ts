@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@nascere/supabase/server";
 import { updatePatientSchema } from "@/lib/validations/patient";
+import { createServerSupabaseClient } from "@nascere/supabase/server";
 import type { TablesUpdate } from "@nascere/supabase/types";
+import { NextResponse } from "next/server";
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();
@@ -59,7 +59,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       name: validation.data.name,
       email: validation.data.email,
       phone: validation.data.phone,
-      date_of_birth: validation.data.date_of_birth,
       due_date: validation.data.due_date,
       address: validation.data.address,
       observations: validation.data.observations,
@@ -82,7 +81,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const supabase = await createServerSupabaseClient();

@@ -46,9 +46,9 @@ function getGreeting() {
   return "Boa noite";
 }
 
-function formatTodayDate() {
-  return dayjs().format("[Hoje, ]DD [de] MMMM [de] YYYY");
-}
+// function formatTodayDate() {
+//   return dayjs().format("[Hoje, ]DD [de] MMMM [de] YYYY");
+// }
 
 function PatientCardSkeleton() {
   return (
@@ -272,21 +272,21 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 pt-6 pb-2 md:px-8">
+      <header className="flex min-h-16 items-center justify-between px-4 md:px-6">
         <div>
-          <h1 className="font-poppins font-semibold text-2xl tracking-tight md:text-xl">
+          <h1 className="font-poppins font-semibold text-xl tracking-tight md:text-xl">
             {getGreeting()}, {getFirstName(profile.name)}!
           </h1>
-          <p className="mt-1 text-muted-foreground text-sm">{formatTodayDate()}</p>
+          {/* <p className="text-muted-foreground text-sm">{formatTodayDate()}</p> */}
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
+        <div className="flex items-start gap-2">
+          <Button variant="ghost" size="icon" className="bg-white">
             <Bell className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col space-y-6 px-4 pt-4 pb-28 sm:pb-4 md:px-8">
+      <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* Trimester Cards */}
         <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
           {trimesterCards.map((card) => (

@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Calendar, DollarSign, Ellipsis, Home, Mail, Users } from "lucide-react";
+import { Calendar, CircleDollarSign, Ellipsis, Home, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -76,7 +76,7 @@ export default function BottomNav() {
     {
       name: "Financeiro",
       href: "/billing",
-      icon: DollarSign,
+      icon: CircleDollarSign,
       isActive: pathname.startsWith("/billing"),
     },
   ];
@@ -84,7 +84,7 @@ export default function BottomNav() {
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 
   return (
-    <div className="fixed bottom-2 z-20 w-full p-4 sm:hidden">
+    <div className="fixed bottom-0 z-20 w-full px-2 py-4 sm:hidden">
       <div ref={moreRef} className="relative">
         <div
           className={cn(
@@ -140,7 +140,7 @@ export default function BottomNav() {
           </Link>
         </div>
 
-        <div className="flex justify-between gap-2 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
+        <div className="flex justify-between gap-1 overflow-scroll rounded-full border border-white bg-primary/10 p-1.5 shadow-md shadow-primary/10 backdrop-blur-md">
           {mainNav.map((navItem) => (
             <Link
               key={`bottom-nav-${navItem.name}`}

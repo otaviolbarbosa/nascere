@@ -3,7 +3,7 @@ import InvitesScreen from "@/screens/invites-screen";
 import { getMyInvites } from "@/services/invite";
 
 export default async function InvitesPage() {
-  const { invites } = await getMyInvites();
+  const { data: invites } = await getMyInvites();
 
-  return <InvitesScreen invites={invites} />;
+  return <InvitesScreen invites={invites || []} />;
 }

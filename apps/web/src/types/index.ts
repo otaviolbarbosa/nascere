@@ -1,12 +1,15 @@
 import type { Tables } from "@nascere/supabase";
 
 export type ProfessionalType = "obstetra" | "enfermeiro" | "doula";
+
+export type Patient = Tables<"patients">;
+
 export type Invite = {
   id: string;
   professional_type: ProfessionalType | null;
   expires_at: string;
   patient: { id: string; name: string; due_date: string; dum: string } | null;
-  inviter: { name: string; professional_type: string | null } | null;
+  inviter: { id: string; name: string; professional_type: string | null } | null;
 };
 
 export type TeamMember = {
