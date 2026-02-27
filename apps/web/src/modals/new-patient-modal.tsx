@@ -1,4 +1,5 @@
 "use client";
+import { addPatientAction } from "@/actions/add-patient-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import dayjs from "dayjs";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -31,7 +32,19 @@ export default function NewPatientModal({
   setShowModal,
   callback,
 }: NewPatientModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { execute, status } = useAction(addPatientAction, {
+    onSuccess: () => {
+      toast.success("Paciente cadastrada com sucesso!");
+      form.reset();
+      callback?.();
+      setShowModal(false);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao cadastrar paciente");
+    },
+  });
+
+  const isSubmitting = status === "executing";
 
   const form = useForm<CreatePatientInput>({
     resolver: zodResolver(createPatientSchema),
@@ -46,30 +59,8 @@ export default function NewPatientModal({
     },
   });
 
-  async function onSubmit(data: CreatePatientInput) {
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/patients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao cadastrar paciente");
-      }
-
-      toast.success("Paciente cadastrada com sucesso!");
-      form.reset();
-      callback?.();
-      setShowModal(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente");
-    } finally {
-      setIsSubmitting(false);
-    }
+  function onSubmit(data: CreatePatientInput) {
+    execute(data);
   }
 
   return (

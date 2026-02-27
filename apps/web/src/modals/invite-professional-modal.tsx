@@ -1,8 +1,11 @@
+"use client";
+
+import { createInviteAction } from "@/actions/create-invite-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
-import { createInvite } from "@/services/invite";
 import type { Tables } from "@nascere/supabase";
 import { Check, Copy } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +25,8 @@ export default function InviteProfessionalModal({
   const [isInviteSent, setIsInviteSent] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
+  const { executeAsync, isPending, hasErrored } = useAction(createInviteAction);
+
   const handleCloseModal = () => {
     setIsOpen(false);
     setIsInviteSent(false);
@@ -31,15 +36,15 @@ export default function InviteProfessionalModal({
   };
 
   async function handleShareWhatsApp() {
-    const { data: invite, error } = await createInvite(patient.id);
+    const result = await executeAsync({ patientId: patient.id });
 
-    if (error || !invite) {
-      toast.error(error ?? "Erro ao criar convite");
+    if (!result?.data?.invite) {
+      toast.error(result?.serverError ?? "Erro ao criar convite");
       return;
     }
 
     const inviteUrl = getInviteUrl();
-    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${invite.id}`;
+    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, "_blank");
   }
@@ -50,18 +55,19 @@ export default function InviteProfessionalModal({
   }
 
   async function handleCopyLink() {
-    const { data: invite, error } = await createInvite(patient.id);
+    const result = await executeAsync({ patientId: patient.id });
 
-    if (error || !invite) {
-      toast.error(error ?? "Erro ao criar convite");
+    if (!result?.data?.invite) {
+      toast.error(result?.serverError ?? "Erro ao criar convite");
       return;
     }
 
     const inviteUrl = getInviteUrl();
-    navigator.clipboard.writeText(`${inviteUrl}/${invite.id}`);
+    navigator.clipboard.writeText(`${inviteUrl}/${result.data.invite.id}`);
     setIsCopied(true);
     toast.success("Link copiado!");
     setTimeout(() => setIsCopied(false), 2000);
+    handleCloseModal();
   }
 
   return (

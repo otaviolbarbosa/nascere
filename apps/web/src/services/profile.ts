@@ -1,0 +1,20 @@
+import { createServerSupabaseClient } from "@nascere/supabase/server";
+import type { Tables } from "@nascere/supabase/types";
+
+type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+type ProfessionalType = NonNullable<Tables<"users">["professional_type"]>;
+
+export async function setProfessionalType(
+  supabase: SupabaseClient,
+  userId: string,
+  type: ProfessionalType,
+) {
+  const { error } = await supabase
+    .from("users")
+    .update({ professional_type: type })
+    .eq("id", userId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

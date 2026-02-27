@@ -1,6 +1,6 @@
 "use client";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingTable } from "@/components/shared/loading-state";
+import { LoadingPatientAppointment } from "@/components/shared/loading-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +64,7 @@ export default function PatientAppointmentsPage() {
   }
 
   if (loading) {
-    return <LoadingTable />;
+    return <LoadingPatientAppointment />;
   }
 
   if (appointments.length === 0) {

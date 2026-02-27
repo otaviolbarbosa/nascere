@@ -1,10 +1,11 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { Calendar, CircleDollarSign, Ellipsis, Home, Mail, Users } from "lucide-react";
+import { Calendar, CircleDollarSign, Ellipsis, Home, Mail } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Avatar from "../shared/avatar";
+import CustomIcon from "../shared/custom-icon";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -54,7 +55,7 @@ export default function BottomNav() {
     {
       name: "Gestantes",
       href: "/patients",
-      icon: Users,
+      icon: (props: React.SVGProps<SVGSVGElement>) => <CustomIcon image="pregnant-icon" {...props} />,
       isActive: pathname.startsWith("/patients"),
     },
     {

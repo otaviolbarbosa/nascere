@@ -2,5 +2,8 @@ export * from "./appointment";
 export * from "./auth";
 export * from "./billing";
 export * from "./home";
+export * from "./invite";
 export * from "./notification";
 export * from "./patient";
+export * from "./profile";
+export * from "./team";

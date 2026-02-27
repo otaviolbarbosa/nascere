@@ -14,7 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 interface ContentModalProps {
   open: boolean;
@@ -31,7 +31,15 @@ export function ContentModal({
   description,
   children,
 }: ContentModalProps) {
-  const isMobile = window?.innerWidth < 640;
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   return isMobile ? (
     <Sheet open={open} onOpenChange={onOpenChange}>

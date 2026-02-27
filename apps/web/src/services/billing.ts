@@ -1,5 +1,20 @@
-import { createServerSupabaseClient } from "@nascere/supabase/server";
+import {
+  calculateInstallmentAmount,
+  calculateInstallmentDates,
+  formatCurrency,
+} from "@/lib/billing/calculations";
+import { scheduleBillingNotifications } from "@/lib/billing/notifications";
+import { sendNotificationToTeam } from "@/lib/notifications/send";
+import { getNotificationTemplate } from "@/lib/notifications/templates";
+import type { CreateBillingInput } from "@/lib/validations/billing";
+import {
+  createServerSupabaseClient,
+  type createServerSupabaseAdmin,
+} from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
+
+type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
 type Billing = Tables<"billings">;
 type Installment = Tables<"installments">;
@@ -184,4 +199,83 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
   metrics.pending_amount = metrics.total_amount - metrics.paid_amount;
 
   return { metrics };
+}
+
+export async function createBilling(
+  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseAdminClient,
+  userId: string,
+  data: CreateBillingInput,
+) {
+  const {
+    patient_id,
+    description,
+    total_amount,
+    payment_method,
+    installment_count,
+    installment_interval,
+    first_due_date,
+    payment_links,
+    notes,
+  } = data;
+
+  const { data: billing, error: billingError } = await supabase
+    .from("billings")
+    .insert({
+      patient_id,
+      professional_id: userId,
+      description,
+      total_amount,
+      payment_method,
+      installment_count,
+      installment_interval,
+      notes,
+    })
+    .select()
+    .single();
+
+  if (billingError) {
+    throw new Error(billingError.message);
+  }
+
+  const amounts = calculateInstallmentAmount(total_amount, installment_count);
+  const dates = calculateInstallmentDates(first_due_date, installment_count, installment_interval);
+
+  const installmentRows = amounts.map((amount, i) => ({
+    billing_id: billing.id,
+    installment_number: i + 1,
+    amount,
+    due_date: dates[i] as string,
+    payment_link: payment_links?.[i] || null,
+  }));
+
+  const { error: installmentError } = await supabaseAdmin
+    .from("installments")
+    .insert(installmentRows);
+
+  if (installmentError) {
+    throw new Error(installmentError.message);
+  }
+
+  scheduleBillingNotifications(billing.id);
+
+  const { data: patient } = await supabase
+    .from("patients")
+    .select("name")
+    .eq("id", patient_id)
+    .single();
+
+  if (patient) {
+    const template = getNotificationTemplate("billing_created", {
+      description,
+      amount: formatCurrency(total_amount),
+    });
+    sendNotificationToTeam(patient_id, userId, {
+      type: "billing_created",
+      ...template,
+      data: { url: `/patients/${patient_id}/billing` },
+    });
+  }
+
+  return billing;
 }

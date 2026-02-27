@@ -1,5 +1,6 @@
 "use client";
 
+import { addBillingAction } from "@/actions/add-billing-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { type CreateBillingInput, createBillingSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -40,7 +42,18 @@ export default function NewBillingModal({
   setShowModal,
   callback,
 }: NewBillingModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { execute, status } = useAction(addBillingAction, {
+    onSuccess: () => {
+      toast.success("Cobrança criada com sucesso!");
+      callback?.();
+      setShowModal(false);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao criar cobrança");
+    },
+  });
+
+  const isSubmitting = status === "executing";
 
   const form = useForm<CreateBillingInput>({
     resolver: zodResolver(createBillingSchema),
@@ -56,8 +69,6 @@ export default function NewBillingModal({
       notes: "",
     },
   });
-
-  console.log(form.formState);
 
   const installmentCount = form.watch("installment_count");
 
@@ -76,35 +87,12 @@ export default function NewBillingModal({
     }
   }, [installmentCount, form, replace]);
 
-  async function onSubmit(data: CreateBillingInput) {
-    setIsSubmitting(true);
-
-    try {
-      // Filter out empty payment links
-      const cleanedData = {
-        ...data,
-        payment_links: data.payment_links?.filter((link) => link !== "") || [],
-      };
-
-      const response = await fetch("/api/billing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cleanedData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao criar cobrança");
-      }
-
-      toast.success("Cobrança criada com sucesso!");
-      callback?.();
-      setShowModal(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar cobrança");
-    } finally {
-      setIsSubmitting(false);
-    }
+  function onSubmit(data: CreateBillingInput) {
+    const cleanedData = {
+      ...data,
+      payment_links: data.payment_links?.filter((link) => link !== "") || [],
+    };
+    execute(cleanedData);
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset on open

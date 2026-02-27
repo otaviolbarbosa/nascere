@@ -19,7 +19,7 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
     patient.weeks >= 37 ? "bg-orange-400" : patient.weeks >= 28 ? "bg-blue-400" : "bg-green-400";
 
   return (
-    <div className="flex items-center gap-4 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/50">
+    <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">
       <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
         {getInitials(patient.name)}
         <div className={`absolute right-1 bottom-1 h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
