@@ -124,9 +124,9 @@ export default function PatientsScreen({
   return (
     <div>
       <Header title="Minhas Gestantes" />
-      <div className="p-4 pt-0 md:p-6">
-        <PageHeader description="Gerencie suas gestantes">
-          <div className="flex items-center gap-2">
+      <div className="p-4 pt-0 md:p-6 md:pt-0">
+        <PageHeader description="">
+          <div className="flex flex-col-reverse items-end gap-4">
             {activeFilter !== "all" && (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
@@ -137,64 +137,66 @@ export default function PatientsScreen({
                 </Badge>
               </div>
             )}
-            <Button
-              size="icon"
-              variant={showSearch ? "secondary" : "outline"}
-              onClick={handleSearchToggle}
-            >
-              {showSearch ? <X className="size-4" /> : <Search className="size-4" />}
-            </Button>
-            <div ref={filterRef} className="relative">
+            <div className="flex items-center gap-2">
               <Button
                 size="icon"
-                variant={activeFilter !== "all" ? "secondary" : "outline"}
-                className="flex"
-                onClick={handleFilterToggle}
+                variant={showSearch ? "secondary" : "outline"}
+                onClick={handleSearchToggle}
               >
-                <ListFilter className="size-4" />
+                {showSearch ? <X className="size-4" /> : <Search className="size-4" />}
               </Button>
-              <div
-                className={cn(
-                  "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                  showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                )}
-              >
-                {FILTER_OPTIONS.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    onClick={() => handleFilterClick(option.key)}
-                    className={cn(
-                      "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                      activeFilter === option.key && "font-medium text-primary",
-                    )}
-                  >
-                    <Check
+              <div ref={filterRef} className="relative">
+                <Button
+                  size="icon"
+                  variant={activeFilter !== "all" ? "secondary" : "outline"}
+                  className="flex"
+                  onClick={handleFilterToggle}
+                >
+                  <ListFilter className="size-4" />
+                </Button>
+                <div
+                  className={cn(
+                    "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                    showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                  )}
+                >
+                  {FILTER_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      onClick={() => handleFilterClick(option.key)}
                       className={cn(
-                        "size-4 shrink-0",
-                        activeFilter === option.key ? "opacity-100" : "opacity-0",
+                        "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                        activeFilter === option.key && "font-medium text-primary",
                       )}
-                    />
-                    {option.label}
-                  </button>
-                ))}
+                    >
+                      <Check
+                        className={cn(
+                          "size-4 shrink-0",
+                          activeFilter === option.key ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <Button
-              size="icon"
-              className="gradient-primary flex sm:hidden"
-              onClick={() => setShowNewPatientModal(true)}
-            >
-              <Plus className="size-4" />
-            </Button>
-            <Button
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowNewPatientModal(true)}
-            >
-              <Plus className="size-4" />
-              <span className="hidden sm:block">Adicionar</span>
-            </Button>
+              <Button
+                size="icon"
+                className="gradient-primary flex sm:hidden"
+                onClick={() => setShowNewPatientModal(true)}
+              >
+                <Plus className="size-4" />
+              </Button>
+              <Button
+                className="gradient-primary hidden sm:flex"
+                onClick={() => setShowNewPatientModal(true)}
+              >
+                <Plus className="size-4" />
+                <span className="hidden sm:block">Adicionar</span>
+              </Button>
+            </div>
           </div>
         </PageHeader>
 
@@ -236,18 +238,20 @@ export default function PatientsScreen({
               {patients.map((patient) => {
                 const weekInfo = calculateGestationalAge(patient?.dum);
                 return (
-                  <Link key={patient.id} href={`/patients/${patient.id}`} className="block">
-                    <div className="rounded-xl border">
-                      <PatientCard
-                        patient={{
-                          ...patient,
-                          weeks: weekInfo?.weeks ?? 0,
-                          days: weekInfo?.days ?? 0,
-                          remainingDays: 280 - (weekInfo?.totalDays ?? 0),
-                          progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
-                        }}
-                      />
-                    </div>
+                  <Link
+                    key={patient.id}
+                    href={`/patients/${patient.id}`}
+                    className="block rounded-xl border"
+                  >
+                    <PatientCard
+                      patient={{
+                        ...patient,
+                        weeks: weekInfo?.weeks ?? 0,
+                        days: weekInfo?.days ?? 0,
+                        remainingDays: 280 - (weekInfo?.totalDays ?? 0),
+                        progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
+                      }}
+                    />
                   </Link>
                 );
               })}

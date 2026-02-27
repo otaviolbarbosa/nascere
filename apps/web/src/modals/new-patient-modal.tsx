@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  type CreatePatientInput,
-  createPatientSchema,
-} from "@/lib/validations/patient";
+import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import dayjs from "dayjs";
@@ -42,7 +39,7 @@ export default function NewPatientModal({
       name: "",
       email: "",
       phone: "",
-      date_of_birth: "",
+      // date_of_birth: "",
       due_date: "",
       dum: "",
       address: "",
@@ -70,9 +67,7 @@ export default function NewPatientModal({
       callback?.();
       setShowModal(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Erro ao cadastrar paciente",
-      );
+      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente");
     } finally {
       setIsSubmitting(false);
     }
@@ -107,13 +102,9 @@ export default function NewPatientModal({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email (opcional)</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="email@exemplo.com"
-                      {...field}
-                    />
+                    <Input type="email" placeholder="email@exemplo.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -141,7 +132,7 @@ export default function NewPatientModal({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
+            {/* <FormField
               control={form.control}
               name="date_of_birth"
               render={({ field }) => (
@@ -153,7 +144,7 @@ export default function NewPatientModal({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={form.control}
@@ -170,10 +161,7 @@ export default function NewPatientModal({
                         const dpp = e.target.value;
                         if (dpp) {
                           const dppDate = dayjs(dpp);
-                          form.setValue(
-                            "dum",
-                            dppDate.subtract(280, "day").format("YYYY-MM-DD"),
-                          );
+                          form.setValue("dum", dppDate.subtract(280, "day").format("YYYY-MM-DD"));
                         } else {
                           form.setValue("dum", "");
                         }
@@ -184,21 +172,20 @@ export default function NewPatientModal({
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="dum"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Última menstruação (DUM)</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} readOnly className="bg-muted" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-
-          <FormField
-            control={form.control}
-            name="dum"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data da última menstruação (DUM)</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} readOnly className="bg-muted" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}
@@ -241,14 +228,8 @@ export default function NewPatientModal({
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="gradient-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Cadastrar Paciente
             </Button>
           </div>

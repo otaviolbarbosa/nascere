@@ -31,7 +31,7 @@ export function ContentModal({
   description,
   children,
 }: ContentModalProps) {
-  const isMobile = window.innerWidth < 640;
+  const isMobile = window?.innerWidth < 640;
 
   return isMobile ? (
     <Sheet open={open} onOpenChange={onOpenChange}>

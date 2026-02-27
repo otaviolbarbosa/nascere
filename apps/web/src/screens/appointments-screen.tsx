@@ -3,7 +3,6 @@
 import { Header } from "@/components/layouts/header";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
-import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
@@ -73,48 +72,55 @@ export default function AppointmentsScreen({
   return (
     <div>
       <Header title="Agenda" />
-      <div className="p-4 pt-0 md:p-6">
-        <div className="flex justify-between">
-          <PageHeader description="Seus agendamentos" />
-          <Button className="gradient-primary" onClick={handleOpenNewModal}>
-            <Plus className="h-4 w-4" />
-            <span className="ml-2 hidden sm:block">Adicionar Agendamento</span>
-          </Button>
-        </div>
-
-        <div className="flex justify-end">
-          <div className="mb-2 inline-flex gap-1 rounded-full border p-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "bg-transparent hover:bg-transparent",
-                isCalendarView &&
-                  "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
-              )}
-              onClick={(e) => {
-                e.preventDefault();
-                handleSetAgendaView("calendar");
-              }}
-            >
-              <Calendar />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "bg-transparent hover:bg-transparent",
-                isListView &&
-                  "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
-              )}
-              onClick={(e) => {
-                e.preventDefault();
-                handleSetAgendaView("list");
-              }}
-            >
-              <ListIcon />
-            </Button>
+      <div className="space-y-4 p-4 pt-0 md:p-6 md:pt-0">
+        <div className="flex items-center justify-end gap-2">
+          {/* <PageHeader description="Meus agendamentos" /> */}
+          <div className="flex items-center justify-end">
+            <div className="inline-flex gap-1 rounded-full border p-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "bg-transparent hover:bg-transparent",
+                  isCalendarView &&
+                    "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSetAgendaView("calendar");
+                }}
+              >
+                <Calendar />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "bg-transparent hover:bg-transparent",
+                  isListView &&
+                    "bg-secondary text-secondary-foreground hover:bg-secondary hover:text-secondary-foreground",
+                )}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSetAgendaView("list");
+                }}
+              >
+                <ListIcon />
+              </Button>
+            </div>
           </div>
+
+          <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
+            <Plus />
+            <span className="ml-2">Adicionar Agendamento</span>
+          </Button>
+          <Button
+            size="icon"
+            className="gradient-primary flex md:hidden"
+            onClick={handleOpenNewModal}
+          >
+            <Plus />
+          </Button>
         </div>
 
         {isCalendarView ? (

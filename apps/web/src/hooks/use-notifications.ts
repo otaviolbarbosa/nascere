@@ -23,7 +23,12 @@ export function useNotifications() {
 
     const fetchUnread = async () => {
       try {
-        const res = await fetch("/api/notifications?unread_count=true");
+        const res = await fetch("/api/notifications?unread_count=true", {
+          cache: "force-cache",
+          next: {
+            revalidate: 300,
+          },
+        });
         if (res.ok) {
           const data = await res.json();
           setUnreadCount(data.unreadCount ?? 0);
@@ -65,6 +70,10 @@ export function useNotifications() {
           fcm_token: token,
           device_info: { userAgent: navigator.userAgent },
         }),
+        cache: "force-cache",
+        next: {
+          revalidate: 3600,
+        },
       });
 
       if (res.ok) {

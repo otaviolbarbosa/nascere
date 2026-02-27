@@ -1,6 +1,6 @@
 "use client";
-import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ export function Header({ title, back }: HeaderProps) {
 
   const handleGoBack = () => {
     if (typeof back === "string") {
-      router.replace(back);
+      return router.replace(back);
     }
     router.back();
   };
@@ -57,7 +57,9 @@ export function Header({ title, back }: HeaderProps) {
       {/* Title */}
       {title && (
         <div className="min-w-0 flex-1">
-          {title && <h1 className="truncate font-poppins font-semibold text-2xl tracking-tight">{title}</h1>}
+          {title && (
+            <h1 className="truncate font-poppins font-semibold text-xl tracking-tight">{title}</h1>
+          )}
         </div>
       )}
       <div className="flex justify-center gap-2">

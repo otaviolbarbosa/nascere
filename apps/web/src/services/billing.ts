@@ -84,6 +84,33 @@ export async function getAllBillings() {
   return { billings: (data as BillingWithInstallments[]) || [] };
 }
 
+export async function getBillings(startDate?: string, endDate?: string) {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { billings: [], error: "Não autorizado" };
+
+  let query = supabase
+    .from("billings")
+    .select(`
+      *,
+      installments(*),
+      patient:patients!billings_patient_id_fkey(id, name)
+    `)
+    .eq("professional_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (startDate) query = query.gte("created_at", startDate);
+  if (endDate) query = query.lte("created_at", endDate);
+
+  const { data, error } = await query;
+  if (error) return { billings: [], error: error.message };
+  return { billings: (data as BillingWithInstallments[]) || [] };
+}
+
 export async function getDashboardMetrics(startDate?: string, endDate?: string) {
   const supabase = await createServerSupabaseClient();
 

@@ -100,7 +100,13 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
 
   return (
     <>
-      <InfoItem label="Nome completo" value={patient.name} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <InfoItem label="Nome completo" value={patient.name} />
+        <InfoItem
+          label="Data de nascimento"
+          value={patient.date_of_birth ? dayjs(patient.date_of_birth).format("DD/MM/YYYY") : null}
+        />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <InfoItem label="Email" value={patient.email} />
@@ -109,19 +115,14 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <InfoItem
-          label="Data de nascimento"
-          value={patient.date_of_birth ? dayjs(patient.date_of_birth).format("DD/MM/YYYY") : null}
-        />
-        <InfoItem
           label="Data prevista do parto (DPP)"
           value={patient.due_date ? dayjs(patient.due_date).format("DD/MM/YYYY") : null}
         />
+        <InfoItem
+          label="Data da última menstruação (DUM)"
+          value={patient.dum ? dayjs(patient.dum).format("DD/MM/YYYY") : null}
+        />
       </div>
-
-      <InfoItem
-        label="Data da última menstruação (DUM)"
-        value={patient.dum ? dayjs(patient.dum).format("DD/MM/YYYY") : null}
-      />
 
       <InfoItem label="Endereço" value={patient.address} />
 
@@ -129,7 +130,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
 
       <Button
         variant="outline"
-        className="absolute top-0 right-0"
+        className="absolute top-0 right-0 hidden md:flex"
         onClick={(e) => {
           e.stopPropagation();
           handleOpenEditModal();
@@ -137,6 +138,18 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       >
         <Pencil className="h-4 w-4" />
         <span className="ml-2 block">Editar</span>
+      </Button>
+
+      <Button
+        size="icon"
+        variant="outline"
+        className="absolute top-0 right-0 flex md:hidden"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleOpenEditModal();
+        }}
+      >
+        <Pencil className="h-4 w-4" />
       </Button>
 
       <ContentModal
@@ -197,7 +210,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="date_of_birth"
                 render={({ field }) => (
@@ -209,7 +222,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
 
               <FormField
                 control={form.control}
@@ -238,21 +251,21 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name="dum"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data da última menstruação (DUM)</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} readOnly className="bg-muted" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="dum"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Última menstruação (DUM)</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} readOnly className="bg-muted" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

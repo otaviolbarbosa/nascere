@@ -63,7 +63,7 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
   return (
     <div>
       <Header title="Convites" />
-      <div className="p-4 pt-0 md:p-6">
+      <div className="p-4 pt-0 md:p-6 md:pt-0">
         <PageHeader description="Convites recebidos para participar de equipes" />
 
         {invites.length === 0 ? (

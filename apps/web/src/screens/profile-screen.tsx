@@ -289,7 +289,11 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
               >
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                className="gradient-primary flex-1"
+                disabled={form.formState.isSubmitting}
+              >
                 {form.formState.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (

@@ -102,7 +102,7 @@ export function AppointmentCalendarView({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div ref={stripRef} className="scrollbar-hide flex gap-2 overflow-x-auto py-1">
+        <div ref={stripRef} className="no-scrollbar scrollbar-hide flex gap-2 overflow-x-auto">
           {days.map((day) => {
             const isSelected = day.key === selectedDate;
             const hasAppointments = Boolean(appointmentsByDate[day.key]?.length);

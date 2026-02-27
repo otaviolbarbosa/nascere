@@ -519,10 +519,10 @@ export type Database = {
           address: string | null
           created_at: string | null
           created_by: string
-          date_of_birth: string
+          date_of_birth: string | null
           due_date: string
           dum: string | null
-          email: string
+          email: string | null
           id: string
           name: string
           observations: string | null
@@ -534,10 +534,10 @@ export type Database = {
           address?: string | null
           created_at?: string | null
           created_by: string
-          date_of_birth: string
+          date_of_birth?: string | null
           due_date: string
           dum?: string | null
-          email: string
+          email?: string | null
           id?: string
           name: string
           observations?: string | null
@@ -549,10 +549,10 @@ export type Database = {
           address?: string | null
           created_at?: string | null
           created_by?: string
-          date_of_birth?: string
+          date_of_birth?: string | null
           due_date?: string
           dum?: string | null
-          email?: string
+          email?: string | null
           id?: string
           name?: string
           observations?: string | null
@@ -705,7 +705,7 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string
-          invited_professional_id: string
+          invited_professional_id: string | null
           patient_id: string
           professional_type:
             | Database["public"]["Enums"]["professional_type"]
@@ -717,7 +717,7 @@ export type Database = {
           expires_at: string
           id?: string
           invited_by: string
-          invited_professional_id: string
+          invited_professional_id?: string | null
           patient_id: string
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
@@ -729,7 +729,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string
-          invited_professional_id?: string
+          invited_professional_id?: string | null
           patient_id?: string
           professional_type?:
             | Database["public"]["Enums"]["professional_type"]
