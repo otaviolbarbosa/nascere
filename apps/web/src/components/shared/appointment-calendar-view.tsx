@@ -23,10 +23,10 @@ const statusColors: Record<string, string> = {
   cancelada: "bg-red-100 text-red-800",
 };
 
-const typeLabels: Record<string, string> = {
-  consulta: "Consulta",
-  encontro: "Encontro",
-};
+// const typeLabels: Record<string, string> = {
+//   consulta: "Consulta",
+//   encontro: "Encontro",
+// };
 
 function groupAppointmentsByDate(appointments: AppointmentWithPatient[]) {
   return appointments.reduce(

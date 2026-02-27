@@ -46,9 +46,9 @@ function getGreeting() {
   return "Boa noite";
 }
 
-function formatTodayDate() {
-  return dayjs().format("[Hoje, ]DD [de] MMMM [de] YYYY");
-}
+// function formatTodayDate() {
+//   return dayjs().format("[Hoje, ]DD [de] MMMM [de] YYYY");
+// }
 
 function PatientCardSkeleton() {
   return (

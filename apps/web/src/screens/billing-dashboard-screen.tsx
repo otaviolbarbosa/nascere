@@ -1,6 +1,5 @@
 "use client";
 
-import type { BillingPeriod } from "@/app/(dashboard)/billing/page";
 import { BillingCard } from "@/components/billing/billing-card";
 import {
   DashboardMetrics,
@@ -11,6 +10,7 @@ import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { BillingPeriod } from "@/lib/billing/period-range";
 import { cn } from "@/lib/utils";
 import type {
   BillingWithInstallments,
