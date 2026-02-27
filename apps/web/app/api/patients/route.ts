@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient, createServerSupabaseAdmin } from "@nascere/supabase/server";
 import { createPatientSchema } from "@/lib/validations/patient";
+import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
 import type { TablesInsert } from "@nascere/supabase/types";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -88,7 +88,6 @@ export async function POST(request: Request) {
       name: validation.data.name,
       email: validation.data.email,
       phone: validation.data.phone,
-      date_of_birth: validation.data.date_of_birth,
       due_date: validation.data.due_date,
       address: validation.data.address,
       observations: validation.data.observations,

@@ -39,7 +39,6 @@ export default function NewPatientModal({
       name: "",
       email: "",
       phone: "",
-      // date_of_birth: "",
       due_date: "",
       dum: "",
       address: "",
@@ -132,20 +131,6 @@ export default function NewPatientModal({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* <FormField
-              control={form.control}
-              name="date_of_birth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data de nascimento</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
-
             <FormField
               control={form.control}
               name="due_date"

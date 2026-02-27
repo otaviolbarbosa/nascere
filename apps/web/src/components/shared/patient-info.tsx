@@ -30,7 +30,6 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       name: "",
       email: "",
       phone: "",
-      date_of_birth: "",
       due_date: "",
       dum: "",
       address: "",
@@ -43,7 +42,6 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       name: patient?.name || "",
       email: patient?.email || "",
       phone: patient?.phone || "",
-      date_of_birth: patient?.date_of_birth || "",
       due_date: patient?.due_date || "",
       dum: patient?.dum || "",
       address: patient?.address || "",
@@ -88,9 +86,8 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   useEffect(() => {
     form.reset({
       name: patient.name,
-      email: patient.email,
+      email: patient.email ?? undefined,
       phone: patient.phone,
-      date_of_birth: patient.date_of_birth,
       due_date: patient.due_date,
       dum: patient.dum || "",
       address: patient.address || "",
@@ -210,20 +207,6 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              {/* <FormField
-                control={form.control}
-                name="date_of_birth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de nascimento</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
-
               <FormField
                 control={form.control}
                 name="due_date"
