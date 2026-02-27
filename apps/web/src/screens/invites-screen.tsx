@@ -1,4 +1,5 @@
 "use client";
+import { respondInviteAction } from "@/actions/respond-invite-action";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -10,6 +11,7 @@ import type { Invite } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import dayjs from "dayjs";
 import { Baby, Calendar, Mail } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,43 +23,37 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
   const [invites, setInvites] = useState<Invite[]>(initialInvites);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  const { executeAsync } = useAction(respondInviteAction);
+
   async function handleAction(inviteId: string, action: "accept" | "reject") {
     setProcessingId(inviteId);
 
-    try {
-      const response = await fetch(`/api/team/invites/${inviteId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
+    const result = await executeAsync({ inviteId, action });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao processar convite");
-      }
-
-      if (action === "accept") {
-        const invite = invites.find((i) => i.id === inviteId);
-        toast.success("Convite aceito!", {
-          action: invite?.patient
-            ? {
-                label: `Ver ${invite.patient.name}`,
-                onClick: () => {
-                  window.location.href = `/patients/${invite.patient?.id}`;
-                },
-              }
-            : undefined,
-        });
-      } else {
-        toast.success("Convite rejeitado");
-      }
-
-      setInvites(invites.filter((i) => i.id !== inviteId));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao processar convite");
-    } finally {
+    if (result?.serverError) {
+      toast.error(result.serverError);
       setProcessingId(null);
+      return;
     }
+
+    if (action === "accept") {
+      const invite = invites.find((i) => i.id === inviteId);
+      toast.success("Convite aceito!", {
+        action: invite?.patient
+          ? {
+              label: `Ver ${invite.patient.name}`,
+              onClick: () => {
+                window.location.href = `/patients/${invite.patient?.id}`;
+              },
+            }
+          : undefined,
+      });
+    } else {
+      toast.success("Convite rejeitado");
+    }
+
+    setInvites(invites.filter((i) => i.id !== inviteId));
+    setProcessingId(null);
   }
 
   return (

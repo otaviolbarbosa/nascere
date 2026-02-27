@@ -8,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default async function HomePage() {
-  const user = await getCurrentUser();
+  const { user } = await getCurrentUser();
 
   const benefits = [
     {
@@ -37,7 +37,7 @@ export default async function HomePage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Logo href="/" size="xl" />
           <nav className="flex items-center space-x-4">
-            {user ? (
+            {user?.id ? (
               <Link href="/home">
                 <Button className="gradient-primary shadow-soft">Acessar Painel</Button>
               </Link>

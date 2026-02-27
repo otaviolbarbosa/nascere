@@ -38,7 +38,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   if (loading) {
     return (
       <div>
-        <Header title="Carregando..." />
+        <Header title={patient ? patient.name : "Carregando..."} />
         <div className="p-4 md:p-6">
           <div className="mb-6">
             <Skeleton className="mb-2 h-8 w-48" />

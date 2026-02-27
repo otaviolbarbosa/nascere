@@ -1,5 +1,4 @@
 "use client";
-
 import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,7 @@ import {
   UserPlusIcon,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -415,7 +415,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
                   </div>
                 ) : (
-                  patients.map((patient) => <PatientCard key={patient.id} patient={patient} />)
+                  <div className="divider-y-1">
+                    {patients.map((patient) => (
+                      <Link key={patient.id} href={`/patients/${patient.id}`}>
+                        <PatientCard patient={patient} />
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -1,6 +1,8 @@
 import type { TeamMember } from "@/types";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
 
+type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+
 type GetTeamMembersResult = {
   teamMembers: TeamMember[];
   error?: string;
@@ -22,4 +24,20 @@ export async function getTeamMembers(patientId: string): Promise<GetTeamMembersR
   }
 
   return { teamMembers: (team as TeamMember[]) || [] };
+}
+
+export async function leaveTeam(
+  supabase: SupabaseClient,
+  userId: string,
+  patientId: string,
+) {
+  const { error } = await supabase
+    .from("team_members")
+    .delete()
+    .eq("patient_id", patientId)
+    .eq("professional_id", userId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

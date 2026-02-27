@@ -1,5 +1,6 @@
 "use client";
 
+import { respondInviteAction } from "@/actions/respond-invite-action";
 import { Header } from "@/components/layouts/header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,9 +8,10 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { Invite } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import dayjs from "dayjs";
-import { Baby, Calendar, CheckCircle, UserCheck } from "lucide-react";
+import { Baby, Calendar, CheckCircle, UserPlus } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type InviteDetailsScreenProps = {
@@ -19,21 +21,16 @@ type InviteDetailsScreenProps = {
 export default function InviteDetailsScreen({ invite }: InviteDetailsScreenProps) {
   const router = useRouter();
   const [processing, setProcessing] = useState(false);
+  const { executeAsync } = useAction(respondInviteAction);
 
-  if (!invite) {
-    return (
-      <>
-        <Header title="Convite Pendente" back="/invites" />
+  useEffect(() => {
+    if (!invite) {
+      toast.error("Este convite pode ter expirado ou sido cancelado.");
+      router.replace("/invites");
+    }
+  }, [invite, router]);
 
-        <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-          <p className="font-medium text-lg">Convite não encontrado</p>
-          <p className="text-muted-foreground text-sm">
-            Este convite pode ter expirado ou sido cancelado.
-          </p>
-        </div>
-      </>
-    );
-  }
+  if (!invite) return null;
 
   const gestationalAge = calculateGestationalAge(invite.patient?.dum);
   const inviterTypeLabel =
@@ -41,41 +38,34 @@ export default function InviteDetailsScreen({ invite }: InviteDetailsScreenProps
     invite.inviter?.professional_type;
 
   async function handleAction(action: "accept" | "reject") {
+    if (!invite?.id) return;
     setProcessing(true);
-    try {
-      const response = await fetch(`/api/team/invites/${invite?.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao processar convite");
-      }
+    const result = await executeAsync({ inviteId: invite.id, action });
 
-      if (action === "accept") {
-        toast.success("Convite aceito! Você agora faz parte da equipe.");
-        router.push(`/patients/${invite?.patient?.id}`);
-      } else {
-        toast.success("Convite recusado.");
-        router.push("/invites");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao processar convite");
+    if (result?.serverError) {
+      toast.error(result.serverError);
       setProcessing(false);
+      return;
+    }
+
+    if (action === "accept") {
+      toast.success("Convite aceito! Você agora faz parte da equipe.");
+      router.push(`/patients/${invite?.patient?.id}`);
+    } else {
+      toast.success("Convite recusado.");
+      router.push("/invites");
     }
   }
 
   return (
     <>
-      <Header title="Convite Pendente" back="/invites" />
-      <div className="mx-auto flex h-full max-w-lg flex-col justify-center p-4 pt-8 md:p-6 md:pt-12">
+      <Header title="Convite para equipe" back="/invites" />
+      <div className="mx-auto flex max-w-lg flex-col justify-center p-4 pt-8 md:p-6 md:pt-12">
         <div className="mb-6 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <UserCheck className="h-8 w-8 text-primary" />
+            <UserPlus className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="font-semibold text-xl">Convite para equipe</h1>
         </div>
 
         <Card>
