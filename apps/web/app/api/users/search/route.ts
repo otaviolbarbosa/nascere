@@ -1,3 +1,4 @@
+import type { ProfessionalType } from "@/types";
 import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -14,7 +15,8 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const q = searchParams.get("q")?.trim() ?? "";
-    const types = searchParams.get("types")?.split(",").filter(Boolean) ?? [];
+    const types =
+      (searchParams.get("types")?.split(",").filter(Boolean) as ProfessionalType[]) ?? [];
 
     if (q.length < 2) {
       return NextResponse.json({ users: [] });

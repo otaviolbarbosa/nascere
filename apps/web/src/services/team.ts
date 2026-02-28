@@ -15,7 +15,7 @@ export async function getTeamMembers(patientId: string): Promise<GetTeamMembersR
     .from("team_members")
     .select(`
       *,
-      professional:users!team_members_professional_id_fkey(id, name, email)
+      professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)
     `)
     .eq("patient_id", patientId);
 
@@ -26,11 +26,7 @@ export async function getTeamMembers(patientId: string): Promise<GetTeamMembersR
   return { teamMembers: (team as TeamMember[]) || [] };
 }
 
-export async function leaveTeam(
-  supabase: SupabaseClient,
-  userId: string,
-  patientId: string,
-) {
+export async function leaveTeam(supabase: SupabaseClient, userId: string, patientId: string) {
   const { error } = await supabase
     .from("team_members")
     .delete()
