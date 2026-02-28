@@ -44,7 +44,7 @@ export function Header({ title, back }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 flex h-16 items-center gap-2 bg-background px-4 transition-shadow duration-300 md:px-6",
+        "sticky top-0 z-40 flex min-h-16 items-center gap-2 bg-background px-4 transition-shadow duration-300 md:px-6",
         isScrolled && "shadow-gray-200 shadow-lg",
       )}
     >

@@ -1,4 +1,5 @@
 "use client";
+import { addAppointmentAction } from "@/actions/add-appointment-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,8 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -45,7 +47,18 @@ export default function NewAppointmentModal({
   setShowModal,
   callback,
 }: NewAppointmentModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { execute, status } = useAction(addAppointmentAction, {
+    onSuccess: () => {
+      toast.success("Agendamento criado com sucesso!");
+      callback?.();
+      setShowModal(false);
+    },
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao criar agendamento");
+    },
+  });
+
+  const isSubmitting = status === "executing";
 
   const form = useForm<CreateAppointmentInput>({
     resolver: zodResolver(createAppointmentSchema),
@@ -60,30 +73,8 @@ export default function NewAppointmentModal({
     },
   });
 
-  async function onSubmit(data: CreateAppointmentInput) {
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/appointments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao criar agendamento");
-      }
-
-      toast.success("Agendamento criado com sucesso!");
-
-      callback?.();
-      setShowModal(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao criar agendamento");
-    } finally {
-      setIsSubmitting(false);
-    }
+  function onSubmit(data: CreateAppointmentInput) {
+    execute(data);
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

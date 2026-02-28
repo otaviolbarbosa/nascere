@@ -2,7 +2,7 @@
 
 import { BillingCard } from "@/components/billing/billing-card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingState } from "@/components/shared/loading-state";
+import { LoadingPatientBilling } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type { Tables } from "@nascere/supabase/types";
@@ -38,7 +38,7 @@ export default function PatientBillingPage() {
     fetchBillings();
   }, [fetchBillings]);
 
-  if (loading) return <LoadingState />;
+  if (loading) return <LoadingPatientBilling />;
 
   return (
     <div>

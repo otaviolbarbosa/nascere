@@ -138,7 +138,18 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button size="sm" className="gradient-primary" onClick={() => setShowModal(true)}>
+        <Button
+          size="icon"
+          className="gradient-primary flex md:hidden"
+          onClick={() => setShowModal(true)}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          className="gradient-primary hidden md:flex"
+          onClick={() => setShowModal(true)}
+        >
           <Plus className="h-4 w-4" />
           <span className="ml-2 hidden md:block">Adicionar Evolução</span>
         </Button>

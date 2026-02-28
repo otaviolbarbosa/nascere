@@ -1,3 +1,7 @@
+import { createServerSupabaseClient } from "@nascere/supabase/server";
+
+type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+
 export type Notification = {
   id: string;
   user_id: string;
@@ -39,13 +43,28 @@ export async function getNotifications(page = 1, filter?: "unread") {
   }>;
 }
 
-export async function markNotificationsRead(ids?: string[]) {
-  const res = await fetch("/api/notifications", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ids }),
-  });
-  if (!res.ok) throw new Error("Erro ao marcar notificações como lidas");
+export async function markNotificationsRead(
+  supabase: SupabaseClient,
+  userId: string,
+  ids?: string[],
+) {
+  const now = new Date().toISOString();
+
+  let query = supabase
+    .from("notifications")
+    .update({ is_read: true, read_at: now })
+    .eq("user_id", userId)
+    .eq("is_read", false);
+
+  if (ids && ids.length > 0) {
+    query = query.in("id", ids);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function getNotificationSettings() {
@@ -54,12 +73,26 @@ export async function getNotificationSettings() {
   return res.json() as Promise<{ settings: NotificationSettings }>;
 }
 
-export async function updateNotificationSettings(settings: Partial<NotificationSettings>) {
-  const res = await fetch("/api/notifications/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(settings),
-  });
-  if (!res.ok) throw new Error("Erro ao atualizar configurações");
-  return res.json() as Promise<{ settings: NotificationSettings }>;
+export async function updateNotificationSettings(
+  supabase: SupabaseClient,
+  userId: string,
+  settings: Partial<NotificationSettings>,
+) {
+  const updateData = {
+    ...settings,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from("notification_settings")
+    .update(updateData)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as NotificationSettings;
 }

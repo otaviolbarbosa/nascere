@@ -1,5 +1,5 @@
 "use client";
-
+import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import type { Tables } from "@nascere/supabase";
 import {
   Activity,
   Baby,
-  Bell,
   CalendarPlus,
   Check,
   Eye,
@@ -29,6 +28,7 @@ import {
   UserPlusIcon,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -272,19 +272,21 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex min-h-16 items-center justify-between px-4 md:px-6">
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+
+      {/* <header className="flex min-h-16 items-center justify-between px-4 md:px-6">
         <div>
           <h1 className="font-poppins font-semibold text-xl tracking-tight md:text-xl">
-            {getGreeting()}, {getFirstName(profile.name)}!
+            
           </h1>
-          {/* <p className="text-muted-foreground text-sm">{formatTodayDate()}</p> */}
+          <p className="text-muted-foreground text-sm">{formatTodayDate()}</p>
         </div>
         <div className="flex items-start gap-2">
           <Button variant="ghost" size="icon" className="bg-white">
             <Bell className="h-5 w-5" />
           </Button>
         </div>
-      </header>
+      </header> */}
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* Trimester Cards */}
@@ -415,7 +417,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                     <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
                   </div>
                 ) : (
-                  patients.map((patient) => <PatientCard key={patient.id} patient={patient} />)
+                  <div className="divider-y-1">
+                    {patients.map((patient) => (
+                      <Link key={patient.id} href={`/patients/${patient.id}`}>
+                        <PatientCard patient={patient} />
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>

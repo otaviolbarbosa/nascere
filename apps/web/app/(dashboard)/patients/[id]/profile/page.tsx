@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmModal } from "@/components/shared/confirm-modal";
-import { LoadingCard } from "@/components/shared/loading-state";
+import { LoadingPatientProfile } from "@/components/shared/loading-state";
 import PatientDocuments from "@/components/shared/patient-documents";
 import PatientEvolution from "@/components/shared/patient-evolution";
 import PatientInfo from "@/components/shared/patient-info";
@@ -67,7 +67,7 @@ export default function PatientProfilePage() {
   }
 
   if (loading) {
-    return <LoadingCard />;
+    return <LoadingPatientProfile />;
   }
 
   if (!patient) {

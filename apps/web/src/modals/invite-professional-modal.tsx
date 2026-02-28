@@ -1,13 +1,30 @@
+"use client";
+
+import { createInviteAction } from "@/actions/create-invite-action";
+import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
 import { ContentModal } from "@/components/shared/content-modal";
+import CustomIcon from "@/components/shared/custom-icon";
 import { Button } from "@/components/ui/button";
-import { createInvite } from "@/services/invite";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { ProfessionalType } from "@/types";
+import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@nascere/supabase";
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { Check, Copy, Loader2, X } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+type SearchedUser = {
+  id: string;
+  name: string;
+  email: string;
+  professional_type: string;
+};
 
 type InviteProfessionalModal = {
   patient: Tables<"patients">;
+  availableTypes: ProfessionalType[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   onClose?: VoidFunction;
@@ -15,33 +32,91 @@ type InviteProfessionalModal = {
 
 export default function InviteProfessionalModal({
   patient,
+  availableTypes,
   isOpen,
   setIsOpen,
   onClose,
 }: InviteProfessionalModal) {
-  const [isInviteSent, setIsInviteSent] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState<SearchedUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<SearchedUser | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const handleCloseModal = () => {
-    setIsOpen(false);
-    setIsInviteSent(false);
-    setIsCopied(false);
+  const { executeAsync: executeInviteDirect, isPending: isInviting } = useAction(
+    inviteProfessionalDirectAction,
+  );
+  const { executeAsync: executeInviteLink, isPending: isLinkPending } =
+    useAction(createInviteAction);
 
-    onClose?.();
-  };
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  async function handleShareWhatsApp() {
-    const { data: invite, error } = await createInvite(patient.id);
-
-    if (error || !invite) {
-      toast.error(error ?? "Erro ao criar convite");
+    if (searchQuery.length < 2) {
+      setResults([]);
+      setIsLoading(false);
       return;
     }
 
-    const inviteUrl = getInviteUrl();
-    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${invite.id}`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank");
+    setIsLoading(true);
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ q: searchQuery });
+        if (availableTypes.length > 0) {
+          params.set("types", availableTypes.join(","));
+        }
+        const res = await fetch(`/api/users/search?${params}`);
+        const data = await res.json();
+        setResults(data.users ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 800);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchQuery, availableTypes]);
+
+  function handleCloseModal() {
+    setIsOpen(false);
+    setSearchQuery("");
+    setResults([]);
+    setSelectedProfessional(null);
+    setIsCopied(false);
+    onClose?.();
+  }
+
+  function handleSelect(user: SearchedUser) {
+    setSelectedProfessional(user);
+    setSearchQuery("");
+    setResults([]);
+  }
+
+  function clearSelection() {
+    setSelectedProfessional(null);
+    setSearchQuery("");
+  }
+
+  async function handleInvite() {
+    if (!selectedProfessional) return;
+
+    const result = await executeInviteDirect({
+      patientId: patient.id,
+      professionalId: selectedProfessional.id,
+    });
+
+    if (!result?.data?.invite) {
+      toast.error(result?.serverError ?? "Erro ao enviar convite");
+      return;
+    }
+
+    toast.success(`Convite enviado para ${selectedProfessional.name}`);
+    handleCloseModal();
   }
 
   function getInviteUrl() {
@@ -50,44 +125,135 @@ export default function InviteProfessionalModal({
   }
 
   async function handleCopyLink() {
-    const { data: invite, error } = await createInvite(patient.id);
+    const result = await executeInviteLink({ patientId: patient.id });
 
-    if (error || !invite) {
-      toast.error(error ?? "Erro ao criar convite");
+    if (!result?.data?.invite) {
+      toast.error(result?.serverError ?? "Erro ao criar convite");
+      return;
+    }
+
+    navigator.clipboard.writeText(`${getInviteUrl()}/${result.data.invite.id}`);
+    setIsCopied(true);
+    toast.success("Link copiado!");
+    setTimeout(() => setIsCopied(false), 2000);
+    handleCloseModal();
+  }
+
+  async function handleShareWhatsApp() {
+    const result = await executeInviteLink({ patientId: patient.id });
+
+    if (!result?.data?.invite) {
+      toast.error(result?.serverError ?? "Erro ao criar convite");
       return;
     }
 
     const inviteUrl = getInviteUrl();
-    navigator.clipboard.writeText(`${inviteUrl}/${invite.id}`);
-    setIsCopied(true);
-    toast.success("Link copiado!");
-    setTimeout(() => setIsCopied(false), 2000);
+    const message = `Olá! Estou te convidando para participar da uma equipe de cuidado de ${patient.name} no VentreApp. Acesse o link para ver o convite: ${inviteUrl}/${result.data.invite.id}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   }
 
   return (
-    <ContentModal
-      open={isOpen}
-      onOpenChange={handleCloseModal}
-      title={isInviteSent ? "Convite Enviado!" : "Convidar Profissional"}
-    >
+    <ContentModal open={isOpen} onOpenChange={handleCloseModal} title="Convidar Profissional">
       <div className="space-y-4 pt-2">
+        <div className="space-y-2">
+          <Label>Buscar profissional</Label>
+
+          {selectedProfessional ? (
+            <div className="flex items-center justify-between rounded-md border bg-muted/50 p-3">
+              <div>
+                <p className="font-medium text-sm">{selectedProfessional.name}</p>
+                <p className="text-muted-foreground text-xs">
+                  {selectedProfessional.email}
+                  {" · "}
+                  {professionalTypeLabels[selectedProfessional.professional_type] ??
+                    selectedProfessional.professional_type}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={clearSelection}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Input
+                placeholder="Nome ou email"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoComplete="off"
+              />
+              {isLoading && (
+                <div className="absolute top-1/2 right-3 -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+              {!isLoading && results.length > 0 && (
+                <div className="absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-md border bg-card shadow-md">
+                  {results.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-muted"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSelect(user);
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-sm">{user.name}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {professionalTypeLabels[user.professional_type] ??
+                            user.professional_type}
+                        </span>
+                      </div>
+                      <span className="text-muted-foreground text-xs">{user.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {!isLoading && searchQuery.length >= 2 && results.length === 0 && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-card px-3 py-4 shadow-md">
+                  <p className="text-center text-muted-foreground text-sm">
+                    Nenhum profissional encontrado
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <Button
+              className="gradient-primary"
+              disabled={!selectedProfessional || isInviting}
+              onClick={handleInvite}
+            >
+              {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enviar Convite
+            </Button>
+          </div>
+        </div>
+
+        <div className="text-center text-muted-foreground text-sm">OU</div>
+
         <p className="text-muted-foreground text-sm">
           Compartilhe o link de convite diretamente com outra profissional.
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={handleCopyLink}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            disabled={isLinkPending}
+            onClick={handleCopyLink}
+          >
             {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
             {isCopied ? "Copiado!" : "Copiar link"}
           </Button>
-          <Button variant="outline" className="flex-1" onClick={handleShareWhatsApp}>
-            <svg
-              className="mr-2 h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
+          <Button
+            variant="outline"
+            className="flex-1"
+            disabled={isLinkPending}
+            onClick={handleShareWhatsApp}
+          >
+            <CustomIcon icon="whatsapp" className="mr-2 h-4 w-4" />
             Enviar por WhatsApp
           </Button>
         </div>

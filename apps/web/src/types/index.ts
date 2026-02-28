@@ -17,7 +17,7 @@ export type TeamMember = {
   professional_id: string;
   professional_type: ProfessionalType;
   joined_at: string | null;
-  professional: { id: string; name: string; email: string } | null;
+  professional: { id: string; name: string; email: string; avatar_url: string } | null;
 };
 
 export type Professional = {
