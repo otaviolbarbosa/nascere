@@ -1,32 +1,28 @@
 "use client";
+import { getPendingInvitesAction } from "@/actions/get-pending-invites-action";
 import { cn } from "@/lib/utils";
-import { Calendar, CircleDollarSign, Ellipsis, Home, Mail } from "lucide-react";
+import { Calendar, CircleDollarSign, Ellipsis, Home, Mail, Users } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "../providers/auth-provider";
 import Avatar from "../shared/avatar";
-import CustomIcon from "../shared/custom-icon";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const [hasPendingInvites, setHasPendingInvites] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
+  const { profile } = useAuth();
+
+  const { execute, result } = useAction(getPendingInvitesAction);
+
   useEffect(() => {
-    async function fetchInvites() {
-      try {
-        const response = await fetch("/api/team/invites");
-        if (response.ok) {
-          const data = await response.json();
-          setHasPendingInvites(data.invites?.length > 0);
-        }
-      } catch {
-        // Silently fail
-      }
-    }
-    fetchInvites();
-  }, []);
+    execute();
+  }, [execute]);
+
+  const hasPendingInvites = result.data?.hasPendingInvites ?? false;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -55,7 +51,8 @@ export default function BottomNav() {
     {
       name: "Gestantes",
       href: "/patients",
-      icon: (props: React.SVGProps<SVGSVGElement>) => <CustomIcon image="pregnant-icon" {...props} />,
+      icon: Users,
+      // icon: (props: React.SVGProps<SVGSVGElement>) => <CustomIcon icon="pregnant" {...props} />,
       isActive: pathname.startsWith("/patients"),
     },
     {
@@ -129,7 +126,12 @@ export default function BottomNav() {
               isProfileActive && "gradient-primary shadow-md",
             )}
           >
-            <Avatar size={8} className="border-none" />
+            <Avatar
+              src={profile?.avatar_url ?? ""}
+              name={profile?.name ?? ""}
+              size={8}
+              className="border-none"
+            />
             <span
               className={cn(
                 "flex-1 text-center font-medium font-poppins text-primary text-xs",

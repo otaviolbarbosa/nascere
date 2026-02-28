@@ -12,6 +12,7 @@ import { professionalTypeLabels } from "@/utils/team";
 import dayjs from "dayjs";
 import { Baby, Calendar, Mail } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import { redirect } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -41,9 +42,9 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
       toast.success("Convite aceito!", {
         action: invite?.patient
           ? {
-              label: `Ver ${invite.patient.name}`,
+              label: `Ver perfil de ${invite.patient.name.split(" ")[0]}`,
               onClick: () => {
-                window.location.href = `/patients/${invite.patient?.id}`;
+                redirect(`/patients/${invite.patient?.id}`);
               },
             }
           : undefined,
