@@ -1,5 +1,7 @@
 "use client";
 
+import { getPatientAction } from "@/actions/get-patient-action";
+import { getTeamMembersAction } from "@/actions/get-team-members-action";
 import { leaveTeamAction } from "@/actions/leave-team-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -8,11 +10,10 @@ import TeamMemberCard from "@/components/shared/team-member-card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import InviteProfessionalModal from "@/modals/invite-professional-modal";
-import type { ProfessionalType, TeamMember } from "@/types";
-import type { Tables } from "@nascere/supabase/types";
+import type { ProfessionalType } from "@/types";
 import { UserMinus, UserPlus, Users } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useParams } from "next/navigation";
+import { redirect, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -21,30 +22,30 @@ export default function PatientTeamPage() {
   const { user } = useAuth();
   const patientId = params.id as string;
 
-  const [patient, setPatient] = useState<Tables<"patients"> | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
 
+  const {
+    execute: fetchPatient,
+    result: patientResult,
+    status: patientStatus,
+  } = useAction(getPatientAction);
+  const {
+    execute: fetchTeamMembers,
+    result: teamResult,
+    status: teamStatus,
+  } = useAction(getTeamMembersAction);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: execute functions are stable
   useEffect(() => {
-    async function fetchData() {
-      const [patientRes, teamRes] = await Promise.all([
-        fetch(`/api/patients/${patientId}`),
-        fetch(`/api/patients/${patientId}/team`),
-      ]);
-      const [patientData, teamData] = await Promise.all([patientRes.json(), teamRes.json()]);
-      setPatient(patientData.patient ?? null);
-      setTeamMembers(teamData.teamMembers ?? []);
-      setLoading(false);
-    }
-    fetchData();
+    fetchPatient({ patientId });
+    fetchTeamMembers({ patientId });
   }, [patientId]);
 
   const { execute: executeLeaveTeam, status: leaveStatus } = useAction(leaveTeamAction, {
     onSuccess: () => {
       toast.success("Você saiu da equipe");
-      window.location.href = "/patients";
+      redirect("/patients");
     },
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao sair da equipe");
@@ -52,6 +53,10 @@ export default function PatientTeamPage() {
     },
   });
 
+  const patient = patientResult.data?.patient ?? null;
+  const teamMembers = teamResult.data?.teamMembers ?? [];
+  const loading =
+    ["idle", "executing"].includes(patientStatus) || ["idle", "executing"].includes(teamStatus);
   const isLeaving = leaveStatus === "executing";
 
   function handleLeaveTeam() {
@@ -67,6 +72,8 @@ export default function PatientTeamPage() {
     (t) => !usedTypes.includes(t),
   );
   const isUserInTeam = teamMembers.some((m) => m.professional_id === user?.id);
+
+  console.log(patient.created_by, user?.id);
 
   return (
     <>
@@ -111,7 +118,11 @@ export default function PatientTeamPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {teamMembers.map((member) => (
-              <TeamMemberCard key={member.id} member={member} />
+              <TeamMemberCard
+                key={member.id}
+                member={member}
+                isOwner={patient.created_by === member.professional?.id}
+              />
             ))}
           </div>
         )}
@@ -130,6 +141,7 @@ export default function PatientTeamPage() {
 
       <InviteProfessionalModal
         patient={patient}
+        availableTypes={availableTypes}
         isOpen={isInviteOpen}
         setIsOpen={setIsInviteOpen}
       />

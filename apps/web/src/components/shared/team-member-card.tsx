@@ -1,20 +1,29 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TeamMember } from "@/types";
-import { getInitials } from "@/utils";
 import { professionalTypeLabels } from "@/utils/team";
+import { Star } from "lucide-react";
+import Avatar from "./avatar";
 
 type TeamMemberCardProps = {
   member: TeamMember;
+  isOwner: boolean;
 };
 
-export default function TeamMemberCard({ member }: TeamMemberCardProps) {
+export default function TeamMemberCard({ member, isOwner }: TeamMemberCardProps) {
   return (
     <Card>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex w-full items-center gap-3 overflow-hidden">
-          <div className="flex min-h-10 min-w-10 items-center justify-center rounded-full bg-muted font-poppins font-semibold text-muted-foreground">
-            {getInitials(member.professional?.name)}
+          <div className="relative flex min-h-10 min-w-10 items-center justify-center rounded-full bg-muted font-poppins font-semibold text-muted-foreground">
+            <Avatar
+              src={member.professional?.avatar_url ?? ""}
+              name={member.professional?.name ?? ""}
+              size={12}
+            />
+            {isOwner && (
+              <Star fill="#16a34a" className="-right-1 absolute bottom-0 size-5 text-green-600" />
+            )}
           </div>
           <div className="flex flex-1 flex-col">
             <div className="flex flex-1 justify-between gap-2 overflow-hidden truncate whitespace-nowrap">
