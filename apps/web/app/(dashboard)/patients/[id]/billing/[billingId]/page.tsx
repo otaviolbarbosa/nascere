@@ -1,5 +1,7 @@
 "use client";
 
+import { getBillingAction } from "@/actions/get-billing-action";
+import { updateBillingAction } from "@/actions/update-billing-action";
 import { InstallmentList } from "@/components/billing/installment-list";
 import { PaymentMethodBadge } from "@/components/billing/payment-method-badge";
 import { StatusBadge } from "@/components/billing/status-badge";
@@ -11,9 +13,10 @@ import { formatCurrency } from "@/lib/billing/calculations";
 import RecordPaymentModal from "@/modals/record-payment-modal";
 import type { Tables } from "@nascere/supabase/types";
 import { ArrowLeft, Trash2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 type Payment = Tables<"payments">;
@@ -29,29 +32,18 @@ export default function BillingDetailPage() {
   const billingId = params.billingId as string;
   const patientId = params.id as string;
 
-  const [billing, setBilling] = useState<Billing | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedInstallment, setSelectedInstallment] =
-    useState<Installment | null>(null);
+  const [selectedInstallment, setSelectedInstallment] = useState<Installment | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
 
-  const fetchBilling = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/billing/${billingId}`);
-      const data = await response.json();
-      setBilling(data.billing);
-    } catch {
-      // Silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [billingId]);
+  const { execute: fetchBilling, result, isPending } = useAction(getBillingAction);
+  const { executeAsync: cancelBilling, isPending: cancelling } = useAction(updateBillingAction);
 
   useEffect(() => {
-    fetchBilling();
-  }, [fetchBilling]);
+    fetchBilling({ billingId });
+  }, [fetchBilling, billingId]);
+
+  const billing = result.data?.billing as Billing | undefined;
 
   const handleRecordPayment = (installment: Installment) => {
     setSelectedInstallment(installment);
@@ -59,27 +51,19 @@ export default function BillingDetailPage() {
   };
 
   const handleCancelBilling = async () => {
-    setCancelling(true);
-    try {
-      const response = await fetch(`/api/billing/${billingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelado" }),
-      });
+    const result = await cancelBilling({ billingId, status: "cancelado" });
 
-      if (!response.ok) throw new Error("Erro ao cancelar cobrança");
-
-      toast.success("Cobrança cancelada com sucesso!");
-      setShowCancelModal(false);
-      router.push(`/patients/${patientId}/billing`);
-    } catch {
+    if (result?.serverError) {
       toast.error("Erro ao cancelar cobrança");
-    } finally {
-      setCancelling(false);
+      return;
     }
+
+    toast.success("Cobrança cancelada com sucesso!");
+    setShowCancelModal(false);
+    router.push(`/patients/${patientId}/billing`);
   };
 
-  if (loading) return <LoadingState />;
+  if (isPending && !billing) return <LoadingState />;
 
   if (!billing) {
     return (
@@ -115,9 +99,7 @@ export default function BillingDetailPage() {
           <div className="flex items-start justify-between gap-2">
             <div>
               <h2 className="font-semibold text-lg">{billing.description}</h2>
-              <p className="text-muted-foreground text-sm">
-                {billing.patient.name}
-              </p>
+              <p className="text-muted-foreground text-sm">{billing.patient.name}</p>
             </div>
             <StatusBadge status={billing.status} />
           </div>
@@ -125,9 +107,7 @@ export default function BillingDetailPage() {
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-muted-foreground text-xs">Total</p>
-              <p className="font-semibold text-lg">
-                {formatCurrency(billing.total_amount)}
-              </p>
+              <p className="font-semibold text-lg">{formatCurrency(billing.total_amount)}</p>
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Pago</p>
@@ -137,18 +117,14 @@ export default function BillingDetailPage() {
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Restante</p>
-              <p className="font-semibold text-lg">
-                {formatCurrency(remaining)}
-              </p>
+              <p className="font-semibold text-lg">{formatCurrency(remaining)}</p>
             </div>
           </div>
 
           <div className="mt-3 flex items-center gap-2">
             <PaymentMethodBadge method={billing.payment_method} />
             {billing.notes && (
-              <span className="text-muted-foreground text-sm">
-                {billing.notes}
-              </span>
+              <span className="text-muted-foreground text-sm">{billing.notes}</span>
             )}
           </div>
         </CardContent>
@@ -173,14 +149,15 @@ export default function BillingDetailPage() {
         billingId={billingId}
         installments={billing.installments}
         onRecordPayment={handleRecordPayment}
-        onUpdate={fetchBilling}
+        onUpdate={() => fetchBilling({ billingId })}
       />
 
       <RecordPaymentModal
         installment={selectedInstallment}
+        paymentMethod={billing.payment_method}
         showModal={showPaymentModal}
         setShowModal={setShowPaymentModal}
-        callback={fetchBilling}
+        callback={() => fetchBilling({ billingId })}
       />
 
       <ConfirmModal

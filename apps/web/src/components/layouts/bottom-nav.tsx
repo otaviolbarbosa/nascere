@@ -18,9 +18,10 @@ export default function BottomNav() {
 
   const { execute, result } = useAction(getPendingInvitesAction);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     execute();
-  }, [execute]);
+  }, []);
 
   const hasPendingInvites = result.data?.hasPendingInvites ?? false;
 

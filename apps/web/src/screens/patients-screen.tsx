@@ -241,7 +241,7 @@ export default function PatientsScreen({
                   <Link
                     key={patient.id}
                     href={`/patients/${patient.id}`}
-                    className="block rounded-xl border"
+                    className="rounded-xl border bg-white"
                   >
                     <PatientCard
                       patient={{

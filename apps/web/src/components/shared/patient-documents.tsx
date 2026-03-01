@@ -1,5 +1,8 @@
 "use client";
 
+import { deleteDocumentAction } from "@/actions/delete-document-action";
+import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-url-action";
+import { getPatientDocumentsAction } from "@/actions/get-patient-documents-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -17,7 +20,8 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type Document = {
@@ -60,9 +64,6 @@ function formatDate(dateStr: string): string {
 }
 
 export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [dragging, setDragging] = useState(false);
@@ -71,23 +72,17 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounter = useRef(0);
 
-  const fetchDocuments = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/patients/${patientId}/documents`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setDocuments(data.documents);
-      setCurrentUserId(data.currentUserId);
-    } catch {
-      toast.error("Erro ao carregar documentos");
-    } finally {
-      setLoading(false);
-    }
-  }, [patientId]);
+  const { execute: fetchDocuments, result: documentsResult, isPending: isFetchingDocs } = useAction(getPatientDocumentsAction);
+  const { executeAsync: downloadDocument } = useAction(getDocumentDownloadUrlAction);
+  const { executeAsync: deleteDocument } = useAction(deleteDocumentAction);
 
   useEffect(() => {
-    fetchDocuments();
-  }, [fetchDocuments]);
+    fetchDocuments({ patientId });
+  }, [fetchDocuments, patientId]);
+
+  const documents = (documentsResult.data?.documents ?? []) as Document[];
+  const currentUserId = documentsResult.data?.currentUserId ?? null;
+  const loading = isFetchingDocs || documentsResult.data === undefined;
 
   const uploadFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
@@ -112,8 +107,6 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
           continue;
         }
 
-        const data = await res.json();
-        setDocuments((prev) => [data.document, ...prev]);
         successCount++;
       } catch {
         toast.error(`Erro ao enviar ${file.name}`);
@@ -126,44 +119,36 @@ export default function PatientDocuments({ patientId }: PatientDocumentsProps) {
           ? "Documento enviado com sucesso"
           : `${successCount} documentos enviados com sucesso`,
       );
+      fetchDocuments({ patientId });
     }
     setUploading(false);
   };
 
   const handleDownload = async (doc: Document) => {
-    try {
-      const res = await fetch(`/api/patients/${patientId}/documents/${doc.id}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      window.open(data.url, "_blank");
-    } catch {
+    const result = await downloadDocument({ documentId: doc.id });
+    if (!result?.data?.url) {
       toast.error("Erro ao baixar documento");
+      return;
     }
+    window.open(result.data.url, "_blank");
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
 
-    try {
-      const res = await fetch(`/api/patients/${patientId}/documents/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
+    const result = await deleteDocument({ documentId: deleteTarget.id });
 
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error || "Erro ao excluir documento");
-        return;
-      }
-
-      setDocuments((prev) => prev.filter((d) => d.id !== deleteTarget.id));
-      toast.success("Documento excluído com sucesso");
-    } catch {
-      toast.error("Erro ao excluir documento");
-    } finally {
+    if (!result?.data?.success) {
+      toast.error(result?.serverError ?? "Erro ao excluir documento");
       setDeleting(false);
-      setDeleteTarget(null);
+      return;
     }
+
+    toast.success("Documento excluído com sucesso");
+    fetchDocuments({ patientId });
+    setDeleting(false);
+    setDeleteTarget(null);
   };
 
   const handleDragEnter = (e: React.DragEvent) => {

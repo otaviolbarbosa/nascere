@@ -1,5 +1,7 @@
 "use client";
 
+import { createEvolutionAction } from "@/actions/create-evolution-action";
+import { getPatientEvolutionsAction } from "@/actions/get-patient-evolutions-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,8 @@ import { dayjs } from "@/lib/dayjs";
 import { type CreateEvolutionInput, createEvolutionSchema } from "@/lib/validations/evolution";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ClipboardList, Loader2, Plus } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -74,55 +77,31 @@ function EvolutionForm({
 }
 
 export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
-  const [evolutions, setEvolutions] = useState<Evolution[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
-  const fetchEvolutions = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/patients/${patientId}/evolutions`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setEvolutions(data.evolutions);
-    } catch {
-      toast.error("Erro ao carregar evoluções");
-    } finally {
-      setLoading(false);
-    }
-  }, [patientId]);
+  const { execute: fetchEvolutions, result, isPending } = useAction(getPatientEvolutionsAction);
+  const { executeAsync: submitEvolution, isPending: submitting } = useAction(createEvolutionAction);
 
   useEffect(() => {
-    fetchEvolutions();
-  }, [fetchEvolutions]);
+    fetchEvolutions({ patientId });
+  }, [fetchEvolutions, patientId]);
+
+  const evolutions = (result.data?.evolutions ?? []) as Evolution[];
 
   const handleSubmit = async (data: CreateEvolutionInput) => {
-    setSubmitting(true);
-    try {
-      const res = await fetch(`/api/patients/${patientId}/evolutions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+    const res = await submitEvolution({ patientId, data });
 
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error || "Erro ao salvar evolução");
-        return;
-      }
-
-      const { evolution } = await res.json();
-      setEvolutions((prev) => [evolution, ...prev]);
-      setShowModal(false);
-      toast.success("Evolução registrada com sucesso");
-    } catch {
-      toast.error("Erro ao salvar evolução");
-    } finally {
-      setSubmitting(false);
+    if (res?.serverError) {
+      toast.error(res.serverError);
+      return;
     }
+
+    fetchEvolutions({ patientId });
+    setShowModal(false);
+    toast.success("Evolução registrada com sucesso");
   };
 
-  if (loading) {
+  if (isPending && evolutions.length === 0) {
     return (
       <div className="space-y-3">
         <div className="flex justify-end">

@@ -1,5 +1,8 @@
 "use client";
+import { deletePatientAction } from "@/actions/delete-patient-action";
+import { getPatientAction } from "@/actions/get-patient-action";
 import { Trash2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -16,57 +19,37 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import type { Tables } from "@nascere/supabase/types";
-
-type Patient = Tables<"patients">;
 
 export default function PatientProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const patientId = params.id as string;
 
-  async function fetchPatient() {
-    const response = await fetch(`/api/patients/${patientId}`);
-    const data = await response.json();
-    if (data.patient) {
-      setPatient(data.patient);
-    }
-    setLoading(false);
-  }
+  const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
+  const { executeAsync: deletePatient, isPending: isDeleting } = useAction(deletePatientAction);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    fetchPatient();
-  }, [patientId]);
+    fetchPatient({ patientId });
+  }, [fetchPatient, patientId]);
+
+  const patient = result.data?.patient;
 
   async function handleDelete() {
-    setIsDeleting(true);
+    const res = await deletePatient({ patientId });
 
-    try {
-      const response = await fetch(`/api/patients/${patientId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao excluir paciente");
-      }
-
-      toast.success("Paciente excluída com sucesso!");
-      router.push("/patients");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao excluir paciente");
-      setIsDeleting(false);
+    if (res?.serverError) {
+      toast.error(res.serverError);
       setShowDeleteDialog(false);
+      return;
     }
+
+    toast.success("Paciente excluída com sucesso!");
+    router.push("/patients");
   }
 
-  if (loading) {
+  if (isPending && !patient) {
     return <LoadingPatientProfile />;
   }
 
@@ -85,7 +68,7 @@ export default function PatientProfilePage() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="relative space-y-4 pt-4">
-              <PatientInfo patient={patient} onChange={fetchPatient} />
+              <PatientInfo patient={patient} onChange={async () => { fetchPatient({ patientId }); }} />
             </AccordionContent>
           </AccordionItem>
 

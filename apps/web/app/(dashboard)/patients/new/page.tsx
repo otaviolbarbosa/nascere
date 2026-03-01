@@ -1,10 +1,11 @@
 "use client";
 
+import { addPatientAction } from "@/actions/add-patient-action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
 import { Loader2 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -27,7 +28,7 @@ import dayjs from "dayjs";
 
 export default function NewPatientPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { executeAsync, isPending } = useAction(addPatientAction);
 
   const form = useForm<CreatePatientInput>({
     resolver: zodResolver(createPatientSchema),
@@ -43,27 +44,20 @@ export default function NewPatientPage() {
   });
 
   async function onSubmit(data: CreatePatientInput) {
-    setIsLoading(true);
+    const result = await executeAsync(data);
 
-    try {
-      const response = await fetch("/api/patients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao cadastrar paciente");
-      }
-
-      toast.success("Paciente cadastrada com sucesso!");
-      router.push("/patients");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao cadastrar paciente");
-    } finally {
-      setIsLoading(false);
+    if (result?.serverError) {
+      toast.error(result.serverError);
+      return;
     }
+
+    if (result?.validationErrors) {
+      toast.error("Dados inválidos. Verifique o formulário.");
+      return;
+    }
+
+    toast.success("Paciente cadastrada com sucesso!");
+    router.push("/patients");
   }
 
   return (
@@ -121,7 +115,6 @@ export default function NewPatientPage() {
                       <FormItem>
                         <FormLabel>Telefone</FormLabel>
                         <FormControl>
-                          {/* <Input type="tel" placeholder="(11) 99999-9999" {...field} /> */}
                           <InputMask
                             component={Input}
                             mask="(__) _____-____"
@@ -219,12 +212,12 @@ export default function NewPatientPage() {
                     type="button"
                     variant="outline"
                     onClick={() => router.back()}
-                    disabled={isLoading}
+                    disabled={isPending}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isPending}>
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Cadastrar Paciente
                   </Button>
                 </div>

@@ -1,4 +1,6 @@
 "use client";
+import { getAppointmentsAction } from "@/actions/get-appointments-action";
+import { getPatientsAction } from "@/actions/get-patients-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientAppointment } from "@/components/shared/loading-state";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +11,9 @@ import NewAppointmentModal from "@/modals/new-appointment-modal";
 import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@nascere/supabase/types";
 import { Calendar, CalendarPlus, Clock, MapPin, Plus } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Appointment = Tables<"appointments"> & {
   professional: { name: string; professional_type: string } | null;
@@ -32,38 +35,24 @@ const typeLabels: Record<string, string> = {
 
 export default function PatientAppointmentsPage() {
   const params = useParams();
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showNewModal, setShowNewModal] = useState(false);
 
   const patientId = params.id as string;
 
-  const fetchAppointments = async () => {
-    const response = await fetch(`/api/appointments?patient_id=${patientId}`);
-    const data = await response.json();
-    setAppointments(data.appointments || []);
-    setLoading(false);
-  };
+  const { execute: fetchAppointments, result: appointmentsResult, isPending } = useAction(
+    getAppointmentsAction,
+  );
+  const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
 
-  const fetchPatients = useCallback(async () => {
-    const response = await fetch("/api/patients");
-    const data = await response.json();
-    setPatients(data.patients || []);
-    setLoading(false);
-  }, []);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchAppointments changes on every render
   useEffect(() => {
-    fetchAppointments();
+    fetchAppointments({ patientId });
     fetchPatients();
-  }, [patientId]);
+  }, [fetchAppointments, fetchPatients, patientId]);
 
-  function handleOpenNewModal() {
-    setShowNewModal(true);
-  }
+  const appointments = (appointmentsResult.data?.appointments ?? []) as Appointment[];
+  const patients = (patientsResult.data?.patients ?? []) as Patient[];
 
-  if (loading) {
+  if (isPending && appointments.length === 0) {
     return <LoadingPatientAppointment />;
   }
 
@@ -75,7 +64,7 @@ export default function PatientAppointmentsPage() {
           title="Nenhum agendamento"
           description="Ainda não há agendamentos para esta paciente."
         >
-          <Button className="gradient-primary" onClick={handleOpenNewModal}>
+          <Button className="gradient-primary" onClick={() => setShowNewModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Novo Agendamento
           </Button>
@@ -86,7 +75,7 @@ export default function PatientAppointmentsPage() {
           setShowModal={setShowNewModal}
           patientId={patientId}
           patients={patients}
-          callback={fetchAppointments}
+          callback={() => fetchAppointments({ patientId })}
         />
       </>
     );
@@ -100,11 +89,11 @@ export default function PatientAppointmentsPage() {
           <Button
             size="icon"
             className="gradient-primary flex md:hidden"
-            onClick={handleOpenNewModal}
+            onClick={() => setShowNewModal(true)}
           >
             <CalendarPlus className="h-4 w-4" />
           </Button>
-          <Button className="gradient-primary hidden md:flex" onClick={handleOpenNewModal}>
+          <Button className="gradient-primary hidden md:flex" onClick={() => setShowNewModal(true)}>
             <CalendarPlus className="h-4 w-4" />
             <span className="ml-2 hidden sm:block">Novo Agendamento</span>
           </Button>
@@ -166,7 +155,7 @@ export default function PatientAppointmentsPage() {
         setShowModal={setShowNewModal}
         patientId={patientId}
         patients={patients}
-        callback={fetchAppointments}
+        callback={() => fetchAppointments({ patientId })}
       />
     </>
   );

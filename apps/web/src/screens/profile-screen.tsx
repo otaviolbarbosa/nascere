@@ -1,5 +1,6 @@
 "use client";
 
+import { updateProfileAction } from "@/actions/update-profile-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import {
   LogOut,
   Settings,
 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -117,38 +119,25 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
       await signOut();
       router.push("/login");
     } catch (error) {
-      console.log(error);
+      console.error(error);
       router.push("/login");
     }
   };
 
+  const { executeAsync: saveProfile } = useAction(updateProfileAction);
+
   const handleSaveProfile = async (values: z.infer<typeof editProfileSchema>) => {
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: values.name,
-          phone: values.phone,
-        }),
-      });
+    const result = await saveProfile({ name: values.name, phone: values.phone });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao salvar");
-      }
-
-      setProfileName(data.profile.name);
-      setProfilePhone(data.profile.phone || "");
-      setIsEditModalOpen(false);
-      router.refresh();
-    } catch (error) {
-      console.error("Save error:", error);
-      alert(error instanceof Error ? error.message : "Erro ao salvar perfil");
+    if (!result?.data?.profile) {
+      alert(result?.serverError ?? "Erro ao salvar perfil");
+      return;
     }
+
+    setProfileName(result.data.profile.name ?? "");
+    setProfilePhone(result.data.profile.phone ?? "");
+    setIsEditModalOpen(false);
+    router.refresh();
   };
 
   const handleAvatarClick = () => {
