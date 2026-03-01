@@ -1,14 +1,16 @@
 "use client";
 
+import { getPatientBillingsAction } from "@/actions/get-patient-billings-action";
 import { BillingCard } from "@/components/billing/billing-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientBilling } from "@/components/shared/loading-state";
 import { Button } from "@/components/ui/button";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type { Tables } from "@nascere/supabase/types";
+import { useAction } from "next-safe-action/hooks";
 import { Plus, Receipt } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Billing = Tables<"billings"> & {
   installments: { id: string; status: string }[];
@@ -18,27 +20,17 @@ type Billing = Tables<"billings"> & {
 export default function PatientBillingPage() {
   const params = useParams();
   const patientId = params.id as string;
-  const [billings, setBillings] = useState<Billing[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  const fetchBillings = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/billing?patient_id=${patientId}`);
-      const data = await response.json();
-      setBillings(data.billings || []);
-    } catch {
-      // Silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [patientId]);
+  const { execute, result, isPending } = useAction(getPatientBillingsAction);
 
   useEffect(() => {
-    fetchBillings();
-  }, [fetchBillings]);
+    execute({ patientId });
+  }, [execute, patientId]);
 
-  if (loading) return <LoadingPatientBilling />;
+  const billings = (result.data?.billings ?? []) as Billing[];
+
+  if (isPending && billings.length === 0) return <LoadingPatientBilling />;
 
   return (
     <div>
@@ -73,7 +65,7 @@ export default function PatientBillingPage() {
         patientId={patientId}
         showModal={showModal}
         setShowModal={setShowModal}
-        callback={fetchBillings}
+        callback={() => execute({ patientId })}
       />
     </div>
   );

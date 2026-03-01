@@ -24,7 +24,7 @@ import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import { type RecordPaymentInput, recordPaymentSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Tables } from "@nascere/supabase/types";
+import type { Database, Tables } from "@nascere/supabase/types";
 import { FileText, Loader2, Paperclip, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -34,6 +34,7 @@ type Installment = Tables<"installments">;
 
 type RecordPaymentModalProps = {
   installment: Installment | null;
+  paymentMethod?: Database["public"]["Enums"]["payment_method"];
   showModal: boolean;
   setShowModal: (open: boolean) => void;
   callback?: VoidFunction;
@@ -41,6 +42,7 @@ type RecordPaymentModalProps = {
 
 export default function RecordPaymentModal({
   installment,
+  paymentMethod,
   showModal,
   setShowModal,
   callback,
@@ -56,7 +58,7 @@ export default function RecordPaymentModal({
     defaultValues: {
       paid_at: dayjs().format("YYYY-MM-DD"),
       paid_amount: remaining,
-      payment_method: undefined,
+      payment_method: paymentMethod,
       notes: "",
     },
   });
@@ -67,7 +69,7 @@ export default function RecordPaymentModal({
       form.reset({
         paid_at: dayjs().format("YYYY-MM-DD"),
         paid_amount: installment.amount - installment.paid_amount,
-        payment_method: installment.payment_method || undefined,
+        payment_method: paymentMethod || installment.payment_method || undefined,
         notes: "",
       });
       setReceiptFile(null);

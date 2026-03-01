@@ -1,11 +1,13 @@
 "use client";
 
+import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@nascere/supabase/types";
 import { Check, ExternalLink, FileText, Image, LinkIcon, X } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "./status-badge";
@@ -28,7 +30,8 @@ export function InstallmentList({
 }: InstallmentListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [linkValue, setLinkValue] = useState("");
-  const [saving, setSaving] = useState(false);
+
+  const { executeAsync: saveLink, isPending: saving } = useAction(saveInstallmentLinkAction);
 
   const handleEditLink = (installment: Installment) => {
     setEditingId(installment.id);
@@ -41,28 +44,21 @@ export function InstallmentList({
   };
 
   const handleSaveLink = async (installmentId: string) => {
-    setSaving(true);
-    try {
-      const response = await fetch(`/api/billing/${billingId}/installments`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          installment_id: installmentId,
-          payment_link: linkValue.trim(),
-        }),
-      });
+    const result = await saveLink({
+      billingId,
+      installmentId,
+      paymentLink: linkValue.trim(),
+    });
 
-      if (!response.ok) throw new Error();
-
-      toast.success("Link de pagamento salvo!");
-      setEditingId(null);
-      setLinkValue("");
-      onUpdate();
-    } catch {
+    if (result?.serverError) {
       toast.error("Erro ao salvar link de pagamento");
-    } finally {
-      setSaving(false);
+      return;
     }
+
+    toast.success("Link de pagamento salvo!");
+    setEditingId(null);
+    setLinkValue("");
+    onUpdate();
   };
 
   return (

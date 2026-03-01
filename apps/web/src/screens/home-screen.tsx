@@ -1,4 +1,6 @@
 "use client";
+import { getHomePatientsAction } from "@/actions/get-home-patients-action";
+import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,7 @@ import {
   UserPlusIcon,
   X,
 } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -45,10 +48,6 @@ function getGreeting() {
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
 }
-
-// function formatTodayDate() {
-//   return dayjs().format("[Hoje, ]DD [de] MMMM [de] YYYY");
-// }
 
 function PatientCardSkeleton() {
   return (
@@ -163,12 +162,10 @@ const FILTER_LABELS: Record<FilterType, string> = {
 };
 
 export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
-  const { trimesterCounts, patients: initialPatients, upcomingAppointments } = homeData;
+  const { trimesterCounts, upcomingAppointments } = homeData;
 
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [patients, setPatients] = useState<PatientWithGestationalInfo[]>(initialPatients);
-  const [isLoading, setIsLoading] = useState(false);
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -177,20 +174,20 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  const fetchPatients = useCallback(async (filter: FilterType, search: string) => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({ filter });
-      if (search) params.set("search", search);
-      const response = await fetch(`/api/home/patients?${params}`);
-      const data = await response.json();
-      setPatients(data.patients || []);
-    } catch {
-      setPatients([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const {
+    execute: fetchPatients,
+    result: patientsResult,
+    isPending: isLoading,
+  } = useAction(getHomePatientsAction);
+  const { execute: fetchAllPatients, result: allPatientsResult } = useAction(getPatientsAction);
+
+  useEffect(() => {
+    fetchAllPatients();
+  }, [fetchAllPatients]);
+
+  const patients = (patientsResult.data?.patients ??
+    homeData.patients) as PatientWithGestationalInfo[];
+  const allPatients = allPatientsResult.data?.patients ?? [];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -208,22 +205,23 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     setShowFilters((prev) => !prev);
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchPatients on deps
   const handleSearchToggle = useCallback(() => {
     setShowSearch((prev) => {
       if (prev) {
         setSearchQuery("");
-        fetchPatients(activeFilter, "");
+        fetchPatients({ filter: activeFilter, search: "" });
       } else {
         setTimeout(() => searchInputRef.current?.focus(), 50);
       }
       return !prev;
     });
-  }, [activeFilter, fetchPatients]);
+  }, [activeFilter]);
 
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
     setShowFilters(false);
-    fetchPatients(filter, searchQuery);
+    fetchPatients({ filter, search: searchQuery });
   };
 
   const activeLabel = FILTER_LABELS[activeFilter];
@@ -232,7 +230,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     setSearchQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      fetchPatients(activeFilter, value);
+      fetchPatients({ filter: activeFilter, search: value });
     }, 400);
   };
 
@@ -271,22 +269,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
-
-      {/* <header className="flex min-h-16 items-center justify-between px-4 md:px-6">
-        <div>
-          <h1 className="font-poppins font-semibold text-xl tracking-tight md:text-xl">
-            
-          </h1>
-          <p className="text-muted-foreground text-sm">{formatTodayDate()}</p>
-        </div>
-        <div className="flex items-start gap-2">
-          <Button variant="ghost" size="icon" className="bg-white">
-            <Bell className="h-5 w-5" />
-          </Button>
-        </div>
-      </header> */}
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* Trimester Cards */}
@@ -375,7 +358,6 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
                   <UserPlusIcon />
                   Nova Gestante
                 </Button>
-                {/* Mobile: only + icon */}
                 <Button
                   className="gradient-primary md:hidden"
                   size="icon"
@@ -450,10 +432,10 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       <NewPatientModal
         showModal={showNewPatient}
         setShowModal={setShowNewPatient}
-        callback={() => fetchPatients(activeFilter, searchQuery)}
+        callback={() => fetchPatients({ filter: activeFilter, search: searchQuery })}
       />
       <NewAppointmentModal
-        patients={patients}
+        patients={allPatients}
         showModal={showNewAppointment}
         setShowModal={setShowNewAppointment}
       />

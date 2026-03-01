@@ -1,42 +1,35 @@
 "use client";
 
+import { getNotificationsAction } from "@/actions/get-notifications-action";
+import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useNotifications } from "@/hooks/use-notifications";
+import { useNotificationsContext } from "@/components/providers/notifications-provider";
 import type { Notification } from "@/services/notification";
 import { Bell } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NotificationItem } from "./notification-item";
 
 export function NotificationBell() {
   const router = useRouter();
-  const { unreadCount, markAsRead, setUnreadCount } = useNotifications();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { unreadCount, setUnreadCount } = useNotificationsContext();
   const [open, setOpen] = useState(false);
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await fetch("/api/notifications?limit=5");
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications ?? []);
-      }
-    } catch {
-      // silently fail
-    }
-  }, []);
+  const { execute: fetchNotifications, result } = useAction(getNotificationsAction);
+  const { executeAsync: markRead } = useAction(markNotificationsReadAction);
 
   useEffect(() => {
-    if (open) fetchNotifications();
+    if (open) fetchNotifications({ page: 1, limit: 5, filter: "all" });
   }, [open, fetchNotifications]);
+
+  const notifications = (result.data?.notifications ?? []) as Notification[];
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
-      await markAsRead([notification.id]);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n)),
-      );
+      await markRead({ ids: [notification.id] });
+      fetchNotifications({ page: 1, limit: 5, filter: "all" });
     }
 
     setOpen(false);
@@ -46,8 +39,8 @@ export function NotificationBell() {
   };
 
   const handleMarkAllRead = async () => {
-    await markAsRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    await markRead({ ids: undefined });
+    fetchNotifications({ page: 1, limit: 5, filter: "all" });
     setUnreadCount(0);
   };
 
@@ -99,7 +92,6 @@ export function NotificationBell() {
               setOpen(false);
               router.push("/notifications");
             }}
-            // className="w-full text-center text-primary text-sm hover:underline"
           >
             Ver todas
           </Button>

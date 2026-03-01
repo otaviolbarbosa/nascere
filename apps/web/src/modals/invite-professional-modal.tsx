@@ -2,6 +2,7 @@
 
 import { createInviteAction } from "@/actions/create-invite-action";
 import { inviteProfessionalDirectAction } from "@/actions/invite-professional-direct-action";
+import { searchUsersAction } from "@/actions/search-users-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import CustomIcon from "@/components/shared/custom-icon";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,6 @@ export default function InviteProfessionalModal({
 }: InviteProfessionalModal) {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<SearchedUser[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<SearchedUser | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -49,38 +49,28 @@ export default function InviteProfessionalModal({
   );
   const { executeAsync: executeInviteLink, isPending: isLinkPending } =
     useAction(createInviteAction);
+  const { executeAsync: executeSearch, isPending: isLoading } = useAction(searchUsersAction);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (searchQuery.length < 2) {
       setResults([]);
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-
     debounceRef.current = setTimeout(async () => {
-      try {
-        const params = new URLSearchParams({ q: searchQuery });
-        if (availableTypes.length > 0) {
-          params.set("types", availableTypes.join(","));
-        }
-        const res = await fetch(`/api/users/search?${params}`);
-        const data = await res.json();
-        setResults(data.users ?? []);
-      } catch {
-        setResults([]);
-      } finally {
-        setIsLoading(false);
-      }
+      const res = await executeSearch({
+        query: searchQuery,
+        types: availableTypes.length > 0 ? availableTypes : undefined,
+      });
+      setResults((res?.data?.users ?? []) as SearchedUser[]);
     }, 800);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchQuery, availableTypes]);
+  }, [searchQuery, availableTypes, executeSearch]);
 
   function handleCloseModal() {
     setIsOpen(false);
@@ -156,8 +146,6 @@ export default function InviteProfessionalModal({
     <ContentModal open={isOpen} onOpenChange={handleCloseModal} title="Convidar Profissional">
       <div className="space-y-4 pt-2">
         <div className="space-y-2">
-          <Label>Buscar profissional</Label>
-
           {selectedProfessional ? (
             <div className="flex items-center justify-between rounded-md border bg-muted/50 p-3">
               <div>
@@ -174,50 +162,54 @@ export default function InviteProfessionalModal({
               </Button>
             </div>
           ) : (
-            <div className="relative">
-              <Input
-                placeholder="Nome ou email"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoComplete="off"
-              />
-              {isLoading && (
-                <div className="absolute top-1/2 right-3 -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              )}
-              {!isLoading && results.length > 0 && (
-                <div className="absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-md border bg-card shadow-md">
-                  {results.map((user) => (
-                    <button
-                      key={user.id}
-                      type="button"
-                      className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-muted"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelect(user);
-                      }}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-sm">{user.name}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {professionalTypeLabels[user.professional_type] ??
-                            user.professional_type}
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground text-xs">{user.email}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              {!isLoading && searchQuery.length >= 2 && results.length === 0 && (
-                <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-md border bg-card px-3 py-4 shadow-md">
-                  <p className="text-center text-muted-foreground text-sm">
-                    Nenhum profissional encontrado
-                  </p>
-                </div>
-              )}
-            </div>
+            <>
+              <Label>Buscar profissional</Label>
+
+              <div className="relative">
+                <Input
+                  placeholder="Nome ou email"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoComplete="off"
+                />
+                {isLoading && (
+                  <div className="-translate-y-1/2 absolute top-1/2 right-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {!isLoading && results.length > 0 && (
+                  <div className="absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-md border bg-card shadow-md">
+                    {results.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        className="flex w-full flex-col gap-0.5 px-3 py-2.5 text-left hover:bg-muted"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelect(user);
+                        }}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-sm">{user.name}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {professionalTypeLabels[user.professional_type] ??
+                              user.professional_type}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground text-xs">{user.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!isLoading && searchQuery.length >= 2 && results.length === 0 && (
+                  <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-md border bg-card px-3 py-4 shadow-md">
+                    <p className="text-center text-muted-foreground text-sm">
+                      Nenhum profissional encontrado
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           <div className="flex justify-end pt-2">

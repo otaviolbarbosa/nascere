@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/use-notifications";
+import { useNotificationsContext } from "@/components/providers/notifications-provider";
 import { Bell, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -9,7 +9,7 @@ const COOLDOWN_KEY = "ventre_push_prompt_dismissed";
 const COOLDOWN_DAYS = 7;
 
 export function NotificationPermissionPrompt() {
-  const { permissionStatus, requestPermission } = useNotifications();
+  const { permissionStatus, requestPermission } = useNotificationsContext();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {

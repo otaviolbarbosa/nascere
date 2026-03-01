@@ -57,6 +57,7 @@ export default function PatientTeamPage() {
   const teamMembers = teamResult.data?.teamMembers ?? [];
   const loading =
     ["idle", "executing"].includes(patientStatus) || ["idle", "executing"].includes(teamStatus);
+  const patientOwnerId = patient?.created_by;
   const isLeaving = leaveStatus === "executing";
 
   function handleLeaveTeam() {
@@ -72,8 +73,6 @@ export default function PatientTeamPage() {
     (t) => !usedTypes.includes(t),
   );
   const isUserInTeam = teamMembers.some((m) => m.professional_id === user?.id);
-
-  console.log(patient.created_by, user?.id);
 
   return (
     <>
@@ -121,7 +120,7 @@ export default function PatientTeamPage() {
               <TeamMemberCard
                 key={member.id}
                 member={member}
-                isOwner={patient.created_by === member.professional?.id}
+                isOwner={patientOwnerId === member.professional?.id}
               />
             ))}
           </div>

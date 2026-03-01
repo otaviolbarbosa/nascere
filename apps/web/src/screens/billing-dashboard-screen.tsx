@@ -1,11 +1,11 @@
 "use client";
 
-import { BillingCard } from "@/components/billing/billing-card";
 import {
   DashboardMetrics,
   type FilterKey,
   type MetricItem,
 } from "@/components/billing/dashboard-metrics";
+import { InstallmentCard } from "@/components/billing/installment-card";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -16,18 +16,16 @@ import type {
   BillingWithInstallments,
   DashboardMetrics as DashboardMetricsType,
 } from "@/services/billing";
-import {
-  AlertTriangle,
-  Check,
-  Clock,
-  DollarSign,
-  ListFilter,
-  Receipt,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import type { Tables } from "@nascere/supabase/types";
+import { AlertTriangle, Check, Clock, ListFilter, Receipt, TrendingUp, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
+
+type Installment = Tables<"installments"> & {
+  description: string;
+  patient_name: string;
+  patient_id: string;
+};
 
 type PeriodOption = {
   key: BillingPeriod;
@@ -85,37 +83,40 @@ export default function BillingDashboardScreen({
 
   const handleFilterClick = useCallback((filter: FilterKey) => {
     setActiveFilter((prev) => (prev === filter ? null : filter));
-    // setTimeout(() => {
-    //   sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // }, 0);
   }, []);
 
-  const filteredBillings = (() => {
-    if (!activeFilter) return billings;
+  const filteredInstallments = (() => {
+    const installments = billings.flatMap((billing) =>
+      billing.installments.map((installment) => ({
+        ...installment,
+        patient_name: billing.patient.name,
+        description: billing.description,
+        patient_id: billing.patient_id,
+      })),
+    );
 
-    const now = new Date();
-    const in7Days = new Date(now);
-    in7Days.setDate(in7Days.getDate() + 7);
+    if (!activeFilter) return installments;
 
-    return billings.filter((billing) => {
+    // const now = dayjs();
+    // const in7Days = dayjs(now).add(7, "day");
+
+    return installments.filter((installment) => {
       switch (activeFilter) {
-        case "total":
-          return billing.paid_amount < billing.total_amount && billing.status !== "cancelado";
+        // case "total":
+        //   return (
+        //     installment.paid_amount < installment.amount && installment.status !== "cancelado"
+        //   );
         case "paid":
-          return billing.paid_amount > 0;
+          return installment.status === "pago";
         case "overdue":
-          return billing.installments.some((i) => i.status === "atrasado");
+          return installment.status === "atrasado";
         case "upcoming":
-          return billing.installments.some((i) => {
-            if (i.status !== "pendente") return false;
-            const dueDate = new Date(i.due_date);
-            return dueDate >= now && dueDate <= in7Days;
-          });
+          return installment.status === "pendente";
         default:
           return true;
       }
     });
-  })();
+  })() as Installment[];
 
   const activePeriodLabel = PERIOD_OPTIONS.find((o) => o.key === activePeriod)?.label;
   const sectionTitle = activeFilter ? FILTER_LABELS[activeFilter] : "Cobranças Recentes";
@@ -178,12 +179,6 @@ export default function BillingDashboardScreen({
             metrics={
               [
                 {
-                  key: "total",
-                  title: "Total a Receber",
-                  amount: metrics.total_amount,
-                  icon: DollarSign,
-                },
-                {
                   key: "paid",
                   title: "Recebido",
                   amount: metrics.paid_amount,
@@ -192,7 +187,7 @@ export default function BillingDashboardScreen({
                 {
                   key: "upcoming",
                   title: "Próx. Vencimentos",
-                  amount: metrics.upcoming_due.length,
+                  amount: metrics.upcoming_due,
                   icon: Clock,
                 },
                 {
@@ -210,7 +205,7 @@ export default function BillingDashboardScreen({
 
         <div ref={sectionRef}>
           <h2 className="mb-3 font-semibold text-lg">{sectionTitle}</h2>
-          {filteredBillings.length === 0 ? (
+          {filteredInstallments.length === 0 ? (
             <EmptyState
               icon={Receipt}
               title="Nenhuma cobrança"
@@ -222,8 +217,12 @@ export default function BillingDashboardScreen({
             />
           ) : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {filteredBillings.map((billing) => (
-                <BillingCard key={billing.id} billing={billing} />
+              {filteredInstallments.map((installment) => (
+                <InstallmentCard
+                  key={installment.id}
+                  installment={installment}
+                  installmentCount={filteredInstallments.length}
+                />
               ))}
             </div>
           )}
