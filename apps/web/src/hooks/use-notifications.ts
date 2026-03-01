@@ -1,5 +1,9 @@
 "use client";
 
+import { getUnreadNotificationsCountAction } from "@/actions/get-unread-notifications-count-action";
+import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
+import { subscribeNotificationsAction } from "@/actions/subscribe-notifications-action";
+import { unsubscribeNotificationsAction } from "@/actions/unsubscribe-notifications-action";
 import { useAuth } from "@/hooks/use-auth";
 import { onForegroundMessage, requestFcmToken } from "@/lib/firebase/client";
 import { useCallback, useEffect, useState } from "react";
@@ -22,19 +26,9 @@ export function useNotifications() {
     if (!user) return;
 
     const fetchUnread = async () => {
-      try {
-        const res = await fetch("/api/notifications?unread_count=true", {
-          cache: "force-cache",
-          next: {
-            revalidate: 300,
-          },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.unreadCount ?? 0);
-        }
-      } catch {
-        // silently fail
+      const result = await getUnreadNotificationsCountAction();
+      if (result?.data) {
+        setUnreadCount(result.data.unreadCount);
       }
     };
 
@@ -62,27 +56,15 @@ export function useNotifications() {
     const token = await requestFcmToken();
     if (!token) return false;
 
-    try {
-      const res = await fetch("/api/notifications/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fcm_token: token,
-          device_info: { userAgent: navigator.userAgent },
-        }),
-        cache: "force-cache",
-        next: {
-          revalidate: 3600,
-        },
-      });
+    const result = await subscribeNotificationsAction({
+      fcmToken: token,
+      deviceInfo: { userAgent: navigator.userAgent },
+    });
 
-      if (res.ok) {
-        setIsSubscribed(true);
-        localStorage.setItem("ventre_push_subscribed", "true");
-        return true;
-      }
-    } catch {
-      // silently fail
+    if (result?.data?.success) {
+      setIsSubscribed(true);
+      localStorage.setItem("ventre_push_subscribed", "true");
+      return true;
     }
     return false;
   }, []);
@@ -91,15 +73,7 @@ export function useNotifications() {
     const token = await requestFcmToken();
     if (!token) return;
 
-    try {
-      await fetch("/api/notifications/unsubscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fcm_token: token }),
-      });
-    } catch {
-      // silently fail
-    }
+    await unsubscribeNotificationsAction({ fcmToken: token });
 
     setIsSubscribed(false);
     localStorage.removeItem("ventre_push_subscribed");
@@ -131,21 +105,13 @@ export function useNotifications() {
   }, [user, subscribe]);
 
   const markAsRead = useCallback(async (ids?: string[]) => {
-    try {
-      const res = await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-      if (res.ok) {
-        if (ids) {
-          setUnreadCount((c) => Math.max(0, c - ids.length));
-        } else {
-          setUnreadCount(0);
-        }
+    const result = await markNotificationsReadAction({ ids });
+    if (result?.data?.success) {
+      if (ids) {
+        setUnreadCount((c) => Math.max(0, c - ids.length));
+      } else {
+        setUnreadCount(0);
       }
-    } catch {
-      // silently fail
     }
   }, []);
 

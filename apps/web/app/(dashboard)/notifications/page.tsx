@@ -1,52 +1,40 @@
 "use client";
 
+import { getNotificationsAction } from "@/actions/get-notifications-action";
+import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
 import { Header } from "@/components/layouts/header";
 import { NotificationItem } from "@/components/shared/notification-item";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
 import type { Notification } from "@/services/notification";
 import { BellOff } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { markAsRead, setUnreadCount } = useNotifications();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [total, setTotal] = useState(0);
+  const { setUnreadCount } = useNotifications();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<"all" | "unread">("all");
-  const [loading, setLoading] = useState(true);
 
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: "20" });
-      if (filter === "unread") params.set("filter", "unread");
-
-      const res = await fetch(`/api/notifications?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setNotifications(data.notifications ?? []);
-        setTotal(data.total ?? 0);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, [page, filter]);
+  const { execute: fetchNotifications, result, isPending: loading } = useAction(
+    getNotificationsAction,
+  );
+  const { executeAsync: markRead } = useAction(markNotificationsReadAction);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    fetchNotifications({ page, limit: 20, filter });
+  }, [fetchNotifications, page, filter]);
+
+  const notifications = (result.data?.notifications ?? []) as Notification[];
+  const total = result.data?.total ?? 0;
+  const totalPages = Math.ceil(total / 20);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.is_read) {
-      await markAsRead([notification.id]);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n)),
-      );
+      await markRead({ ids: [notification.id] });
+      fetchNotifications({ page, limit: 20, filter });
     }
 
     if (notification.data?.url) {
@@ -55,12 +43,10 @@ export default function NotificationsPage() {
   };
 
   const handleMarkAllRead = async () => {
-    await markAsRead();
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    await markRead({ ids: undefined });
+    fetchNotifications({ page, limit: 20, filter });
     setUnreadCount(0);
   };
-
-  const totalPages = Math.ceil(total / 20);
 
   return (
     <>

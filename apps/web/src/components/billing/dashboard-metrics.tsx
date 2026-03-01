@@ -28,14 +28,14 @@ type MetricsProps = {
 
 export function DashboardMetrics({ metrics, activeFilter, onFilterClick }: MetricsProps) {
   return (
-    <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+    <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
       {metrics.map((metric) => {
         const isActive = activeFilter === metric.key;
         const styles = METRIC_STYLES[metric.key];
         return (
           <Card
             key={metric.key}
-            className={`w-44 shrink-0 cursor-pointer transition-shadow sm:w-auto ${isActive ? `ring-2 ${styles.ring}` : ""}`}
+            className={`w-44 shrink-0 cursor-pointer transition-shadow sm:w-auto sm:shrink ${isActive ? `ring-2 ${styles.ring}` : ""}`}
             onClick={() => onFilterClick(metric.key)}
           >
             <CardContent className="space-y-2 p-4">

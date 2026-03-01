@@ -8,8 +8,8 @@ import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
 import type { CreateBillingInput } from "@/lib/validations/billing";
 import {
-  createServerSupabaseClient,
   type createServerSupabaseAdmin,
+  createServerSupabaseClient,
 } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
 
@@ -39,7 +39,7 @@ export type DashboardMetrics = {
   total_billings: number;
   by_status: Record<string, number>;
   by_payment_method: Record<string, number>;
-  upcoming_due: Installment[];
+  upcoming_due: number;
 };
 
 export async function getPatientBillings(patientId: string) {
@@ -116,10 +116,11 @@ export async function getBillings(startDate?: string, endDate?: string) {
       patient:patients!billings_patient_id_fkey(id, name)
     `)
     .eq("professional_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("installment_number", { ascending: true, referencedTable: "installments" });
 
-  if (startDate) query = query.gte("created_at", startDate);
-  if (endDate) query = query.lte("created_at", endDate);
+  if (startDate) query = query.gte("installments.due_date", startDate);
+  if (endDate) query = query.lte("installments.due_date", endDate);
 
   const { data, error } = await query;
   if (error) return { billings: [], error: error.message };
@@ -165,20 +166,19 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
     total_billings: typedBillings.length,
     by_status: {},
     by_payment_method: {},
-    upcoming_due: [],
+    upcoming_due: 0,
   };
 
-  const today = new Date().toISOString().split("T")[0] as string;
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0] as string;
+  // const today = new Date().toISOString().split("T")[0] as string;
+  // const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  //   .toISOString()
+  //   .split("T")[0] as string;
 
   for (const billing of typedBillings) {
-    metrics.total_amount += billing.total_amount;
+    metrics.pending_amount += billing.total_amount - billing.paid_amount;
     metrics.paid_amount += billing.paid_amount;
 
-    metrics.by_status[billing.status] =
-      (metrics.by_status[billing.status] || 0) + 1;
+    metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;
     metrics.by_payment_method[billing.payment_method] =
       (metrics.by_payment_method[billing.payment_method] || 0) + 1;
 
@@ -186,12 +186,8 @@ export async function getDashboardMetrics(startDate?: string, endDate?: string) 
       if (inst.status === "atrasado") {
         metrics.overdue_amount += inst.amount - inst.paid_amount;
       }
-      if (
-        inst.status === "pendente" &&
-        inst.due_date >= today &&
-        inst.due_date <= nextWeek
-      ) {
-        metrics.upcoming_due.push(inst);
+      if (inst.status === "pendente") {
+        metrics.upcoming_due += inst.amount - inst.paid_amount;
       }
     }
   }

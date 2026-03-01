@@ -4,6 +4,6 @@ import type { Database } from "@nascere/supabase/types";
 
 type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
-export function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
-  return <Badge variant="outline">{getPaymentMethodLabel(method)}</Badge>;
+export function PaymentMethodBadge({ method }: { method?: PaymentMethod | null }) {
+  return method ? <Badge variant="outline">{getPaymentMethodLabel(method)}</Badge> : null;
 }

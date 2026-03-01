@@ -1,11 +1,13 @@
 "use client";
+import { updatePatientAction } from "@/actions/update-patient-action";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase";
 import { InputMask } from "@react-input/mask";
 import dayjs from "dayjs";
 import { Loader2, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -14,6 +16,7 @@ import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { ContentModal } from "./content-modal";
 import InfoItem from "./info-item";
+import { useState } from "react";
 
 type PatientInfoProps = {
   patient: Tables<"patients">;
@@ -21,8 +24,8 @@ type PatientInfoProps = {
 };
 
 export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
-  const [isSaving, setIsSaving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const { executeAsync, isPending: isSaving } = useAction(updatePatientAction);
 
   const form = useForm<UpdatePatientInput>({
     resolver: zodResolver(updatePatientSchema),
@@ -56,30 +59,16 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   }
 
   async function onSubmit(data: UpdatePatientInput) {
-    setIsSaving(true);
+    const result = await executeAsync({ patientId: patient.id, data });
 
-    try {
-      const response = await fetch(`/api/patients/${patient.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erro ao atualizar paciente");
-      }
-
-      //   const updated = await response.json();
-      //   setPatient(updated.patient);
-      await onChange();
-      setShowEditModal(false);
-      toast.success("Gestante atualizada com sucesso!");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Erro ao atualizar paciente");
-    } finally {
-      setIsSaving(false);
+    if (result?.serverError) {
+      toast.error(result.serverError);
+      return;
     }
+
+    await onChange();
+    setShowEditModal(false);
+    toast.success("Gestante atualizada com sucesso!");
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>

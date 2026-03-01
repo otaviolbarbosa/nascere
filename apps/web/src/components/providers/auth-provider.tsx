@@ -55,7 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
+      // Use functional update to avoid changing the reference when it's the same user,
+      // preventing unnecessary re-renders and cascading effect re-runs in consumers.
+      setUser((prev) => {
+        if (prev?.id === session?.user?.id) return prev;
+        return session?.user ?? null;
+      });
       if (session?.user) {
         await fetchProfile(session.user.id);
       } else {

@@ -1,5 +1,7 @@
 "use client";
 
+import { getAppointmentsAction } from "@/actions/get-appointments-action";
+import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
@@ -10,7 +12,8 @@ import NewAppointmentModal from "@/modals/new-appointment-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import type { Tables } from "@nascere/supabase";
 import { Calendar, ListIcon, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useMemo, useState } from "react";
 
 type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
@@ -24,8 +27,6 @@ export default function AppointmentsScreen({
   appointments: initialAppointments,
 }: AppointmentsScreenProps) {
   const [showNewModal, setShowNewModal] = useState(false);
-  const [_loading, setLoading] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
   const [agendaView, setAgendaView] = useState<AgendaView>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("agenda-view");
@@ -38,7 +39,6 @@ export default function AppointmentsScreen({
     setAgendaView(view);
     localStorage.setItem("agenda-view", view);
   }
-  const [appointments, setAppointments] = useState<AppointmentWithPatient[]>(initialAppointments);
 
   const isListView = useMemo(() => agendaView === "list", [agendaView]);
   const isCalendarView = useMemo(() => agendaView === "calendar", [agendaView]);
@@ -46,28 +46,20 @@ export default function AppointmentsScreen({
   const calendarStartDate = dayjs().format("YYYY-MM-DD");
   const calendarEndDate = dayjs().add(14, "day").format("YYYY-MM-DD");
 
-  const fetchPatients = useCallback(async () => {
-    const response = await fetch("/api/patients");
-    const data = await response.json();
-    setPatients(data.patients || []);
-  }, []);
+  const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
+  const { execute: fetchAppointments, result: appointmentsResult } = useAction(getAppointmentsAction);
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
-    const response = await fetch("/api/appointments");
-    const data = await response.json();
-    setAppointments(data.appointments || []);
-    setLoading(false);
-  }, []);
+  useEffect(() => {
+    fetchPatients();
+    fetchAppointments({});
+  }, [fetchPatients, fetchAppointments]);
+
+  const patients = (patientsResult.data?.patients ?? []) as Patient[];
+  const appointments = (appointmentsResult.data?.appointments ?? initialAppointments) as AppointmentWithPatient[];
 
   function handleOpenNewModal() {
     setShowNewModal(true);
   }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchAppointments changes on every render
-  useEffect(() => {
-    fetchPatients();
-  }, []);
 
   return (
     <div>
@@ -137,7 +129,7 @@ export default function AppointmentsScreen({
         showModal={showNewModal}
         setShowModal={setShowNewModal}
         patients={patients}
-        callback={fetchAppointments}
+        callback={() => fetchAppointments({})}
       />
     </div>
   );
