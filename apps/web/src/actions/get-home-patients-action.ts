@@ -37,7 +37,7 @@ export const getHomePatientsAction = authActionClient
 
     const today = dayjs();
 
-    const patientsWithInfo = (patients || [])
+    const patientsWithInfo: PatientWithGestationalInfo[] = (patients || [])
       .map((patient) => {
         const gestationalAge = calculateGestationalAge(patient.dum);
         const dueDate = dayjs(patient.due_date);
@@ -45,13 +45,15 @@ export const getHomePatientsAction = authActionClient
 
         return {
           ...patient,
+          born_at: null,
+          has_finished: false,
           weeks: gestationalAge?.weeks ?? 0,
           days: gestationalAge?.days ?? 0,
           remainingDays: Math.max(remainingDays, 0),
           progress: gestationalAge
             ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100)
             : 0,
-        } as PatientWithGestationalInfo;
+        };
       })
       .slice(0, 5);
 
