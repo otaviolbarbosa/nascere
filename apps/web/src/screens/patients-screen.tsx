@@ -311,7 +311,7 @@ export default function PatientsScreen({
       <NewPatientModal
         showModal={showNewPatientModal}
         setShowModal={setShowNewPatientModal}
-        callback={() => router.refresh()}
+        onSuccess={() => router.refresh()}
       />
     </div>
   );

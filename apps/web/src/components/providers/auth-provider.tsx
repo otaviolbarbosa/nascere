@@ -1,5 +1,6 @@
 "use client";
 
+import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
 import { supabase } from "@nascere/supabase";
 import type { Tables } from "@nascere/supabase/types";
 import type { User } from "@supabase/supabase-js";
@@ -23,6 +24,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isProfessional: boolean;
   isPatient: boolean;
+  isManager: boolean;
+  isSecretary: boolean;
+  isStaff: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -129,8 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     signInWithGoogle,
     isAuthenticated: !!user,
-    isProfessional: profile?.user_type === "professional",
-    isPatient: profile?.user_type === "patient",
+    isProfessional: isProfessional(profile),
+    isPatient: isPatient(profile),
+    isManager: isManager(profile),
+    isSecretary: isSecretary(profile),
+    isStaff: isStaff(profile),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

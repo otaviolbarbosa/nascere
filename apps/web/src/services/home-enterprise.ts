@@ -71,7 +71,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   const enterpriseId = currentUser.enterprise_id;
 
   // Busca todos os profissionais da organização
-  const { data: professionals } = await supabaseAdmin
+  const { data: professionals } = await supabase
     .from("users")
     .select("id, name, professional_type")
     .eq("enterprise_id", enterpriseId)
@@ -84,7 +84,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
   const professionalIds = professionals.map((p) => p.id);
 
   // Busca todos os pacientes dos profissionais da organização via team_members
-  const { data: teamMembers } = await supabaseAdmin
+  const { data: teamMembers } = await supabase
     .from("team_members")
     .select("patient_id, professional_id")
     .in("professional_id", professionalIds);

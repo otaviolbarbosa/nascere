@@ -129,7 +129,7 @@ export default function AppointmentsScreen({
         showModal={showNewModal}
         setShowModal={setShowNewModal}
         patients={patients}
-        callback={() => fetchAppointments({})}
+        onSuccess={() => fetchAppointments({})}
       />
     </div>
   );

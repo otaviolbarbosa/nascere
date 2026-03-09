@@ -176,7 +176,7 @@ export default function ProfessionalsScreen({
         showModal={showNewPatientModal}
         setShowModal={setShowNewPatientModal}
         professionals={selectedProfessional ? [selectedProfessional] : undefined}
-        callback={() => router.refresh()}
+        onSuccess={() => router.refresh()}
       />
     </div>
   );

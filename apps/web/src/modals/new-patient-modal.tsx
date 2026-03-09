@@ -36,21 +36,21 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
 type NewPatientModalProps = {
   showModal: boolean;
   setShowModal: (open: boolean) => void;
-  callback?: VoidFunction;
+  onSuccess?: VoidFunction;
   professionals?: Professional[];
 };
 
 export default function NewPatientModal({
   showModal,
   setShowModal,
-  callback,
+  onSuccess,
   professionals,
 }: NewPatientModalProps) {
   const { execute, status } = useAction(addPatientAction, {
     onSuccess: () => {
       toast.success("Paciente cadastrada com sucesso!");
       form.reset();
-      callback?.();
+      onSuccess?.();
       setShowModal(false);
     },
     onError: ({ error }) => {

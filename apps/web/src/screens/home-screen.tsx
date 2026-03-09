@@ -1,4 +1,5 @@
 "use client";
+import { getHomeDataAction } from "@/actions/get-home-data-action";
 import { getHomePatientsAction } from "@/actions/get-home-patients-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
@@ -13,20 +14,20 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { HomeAppointment, HomeData } from "@/services/home";
+import { MONTH_LABELS_FULL } from "@/services/home";
+import type { HomeAppointment } from "@/services/home";
 import type { PatientWithGestationalInfo } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 import {
-  Activity,
   Baby,
   CalendarPlus,
   Check,
   Eye,
-  Heart,
   ListFilter,
   Search,
-  SmilePlus,
+  TrendingDown,
+  TrendingUp,
   UserPlusIcon,
   X,
 } from "lucide-react";
@@ -37,7 +38,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeScreenProps = {
   profile: Tables<"users">;
-  homeData: HomeData;
 };
 
 type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
@@ -57,6 +57,94 @@ function PatientCardSkeleton() {
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-56" />
         <Skeleton className="mt-2 h-2 w-full rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function AgendaSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-7 w-20" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-9 w-9 rounded-md" />
+        </div>
+      </div>
+      <Card className="h-fit">
+        <CardContent className="space-y-6 py-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
+                <Skeleton className="h-3 w-3 rounded-full" />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-28" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
+  return (
+    <div className="flex h-full flex-col">
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
+        {/* DPP cards skeleton */}
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
+          {[0, 1, 2, 3].map((i) => (
+            <Card key={i} className="w-36 shrink-0">
+              <CardContent className="flex items-center justify-between p-2.5">
+                <div className="space-y-1">
+                  <Skeleton className="h-6 w-8" />
+                  <Skeleton className="h-3 w-10" />
+                </div>
+                <Skeleton className="h-10 w-10 rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+          {/* Patient list skeleton */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-7 w-44" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-9 rounded-md" />
+                <Skeleton className="h-9 w-9 rounded-md" />
+                <Skeleton className="hidden h-9 w-36 rounded-md md:block" />
+                <Skeleton className="h-9 w-9 rounded-md md:hidden" />
+              </div>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+                <PatientCardSkeleton />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Agenda skeleton (desktop) */}
+          <div className="hidden lg:block">
+            <AgendaSkeleton />
+          </div>
+        </div>
+
+        {/* Agenda skeleton (mobile) */}
+        <div className="lg:hidden">
+          <AgendaSkeleton />
+        </div>
       </div>
     </div>
   );
@@ -161,9 +249,7 @@ const FILTER_LABELS: Record<FilterType, string> = {
   final: "Bebê a Termo",
 };
 
-export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
-  const { trimesterCounts, upcomingAppointments } = homeData;
-
+export default function HomeScreen({ profile }: HomeScreenProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewPatient, setShowNewPatient] = useState(false);
@@ -175,18 +261,30 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
   const filterRef = useRef<HTMLDivElement>(null);
 
   const {
+    execute: fetchHomeData,
+    result: homeDataResult,
+    isPending: isLoadingHome,
+  } = useAction(getHomeDataAction);
+
+  const {
     execute: fetchPatients,
     result: patientsResult,
-    isPending: isLoading,
+    isPending: isLoadingPatients,
   } = useAction(getHomePatientsAction);
+
   const { execute: fetchAllPatients, result: allPatientsResult } = useAction(getPatientsAction);
 
   useEffect(() => {
+    fetchHomeData({});
     fetchAllPatients();
-  }, [fetchAllPatients]);
+  }, [fetchHomeData, fetchAllPatients]);
 
+  const homeData = homeDataResult.data;
+  const dppByMonth = homeData?.dppByMonth ?? [];
+  const upcomingAppointments = homeData?.upcomingAppointments ?? [];
   const patients = (patientsResult.data?.patients ??
-    homeData.patients) as PatientWithGestationalInfo[];
+    homeData?.patients ??
+    []) as PatientWithGestationalInfo[];
   const allPatients = allPatientsResult.data?.patients ?? [];
 
   useEffect(() => {
@@ -240,36 +338,22 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
     };
   }, []);
 
-  const trimesterCards = [
-    {
-      label: "1º Trimestre",
-      count: trimesterCounts.first,
-      subtitle: "Gestantes ativas",
-      icon: SmilePlus,
-      iconColor: "text-primary",
-      iconBg: "bg-muted",
-    },
-    {
-      label: "2º Trimestre",
-      count: trimesterCounts.second,
-      subtitle: "Acompanhamento regular",
-      icon: Activity,
-      iconColor: "text-primary",
-      iconBg: "bg-muted",
-    },
-    {
-      label: "3º Trimestre",
-      count: trimesterCounts.third,
-      subtitle: "Preparação para parto",
-      icon: Heart,
-      iconColor: "text-rose-500",
-      iconBg: "bg-rose-50",
-    },
-  ];
+  const refreshHomeData = useCallback(() => {
+    fetchHomeData({});
+  }, [fetchHomeData]);
 
-  const hasAnyPatients = homeData.patients.length > 0;
+  const refreshAll = useCallback(() => {
+    fetchHomeData({});
+    fetchPatients({ filter: activeFilter, search: searchQuery });
+  }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 
-  if (!hasAnyPatients) {
+  if (isLoadingHome && !homeData) {
+    return <HomeScreenSkeleton profile={profile} />;
+  }
+
+  const hasAnyPatients = (homeData?.patients?.length ?? 0) > 0;
+
+  if (!hasAnyPatients && homeData) {
     return (
       <div className="flex h-full flex-col">
         <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
@@ -289,7 +373,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
         <NewPatientModal
           showModal={showNewPatient}
           setShowModal={setShowNewPatient}
-          callback={() => fetchPatients({ filter: activeFilter, search: searchQuery })}
+          onSuccess={refreshAll}
         />
       </div>
     );
@@ -300,21 +384,44 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
-        {/* Trimester Cards */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-          {trimesterCards.map((card) => (
-            <Card key={card.label} className="w-52 shrink-0 sm:w-auto">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-semibold text-muted-foreground text-sm">{card.label}</p>
-                  <p className="font-bold font-poppins text-3xl">{card.count}</p>
-                  <p className="text-muted-foreground text-xs">{card.subtitle}</p>
+        {/* DPP by Month Cards */}
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
+          {dppByMonth.map((item) => (
+            <Card key={`${item.year}-${item.month}`} className="shrink-0">
+              <CardContent className="flex items-center justify-between px-4 py-3">
+                <div className="space-y-1">
+                  <div className="flex min-w-[120px] items-center justify-between gap-3">
+                    <p className="font-bold font-poppings text-lg text-muted-foreground">
+                      {MONTH_LABELS_FULL[item.month]}
+                    </p>
+                    {item.percentage !== 0 && (
+                      <div
+                        className={cn(
+                          "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
+                          item.percentage >= 0
+                            ? "border-green-600/20 text-green-600"
+                            : "border-destructive/20 text-destructive",
+                        )}
+                      >
+                        {Math.abs(item.percentage)}%
+                        {item.percentage >= 0 ? (
+                          <TrendingUp className="size-3.5" />
+                        ) : (
+                          <TrendingDown className="size-3.5" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-4">
+                    <p className="font-bold font-poppins text-xl">{item.count}</p>
+                    <span className="text-muted-foreground text-xs">Gestates</span>
+                  </div>
                 </div>
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full ${card.iconBg}`}
-                >
-                  <card.icon className={`h-6 w-6 ${card.iconColor}`} />
-                </div>
+                {/* <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                  <span className="font-semibold text-muted-foreground text-sm">
+                    {MONTH_LABELS_SHORT[item.month]}
+                  </span>
+                </div> */}
               </CardContent>
             </Card>
           ))}
@@ -413,7 +520,7 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
             {/* Patient List */}
             <Card>
               <CardContent className="p-0">
-                {isLoading ? (
+                {isLoadingPatients ? (
                   <>
                     <PatientCardSkeleton />
                     <PatientCardSkeleton />
@@ -460,12 +567,13 @@ export default function HomeScreen({ profile, homeData }: HomeScreenProps) {
       <NewPatientModal
         showModal={showNewPatient}
         setShowModal={setShowNewPatient}
-        callback={() => fetchPatients({ filter: activeFilter, search: searchQuery })}
+        onSuccess={refreshAll}
       />
       <NewAppointmentModal
         patients={allPatients}
         showModal={showNewAppointment}
         setShowModal={setShowNewAppointment}
+        onSuccess={refreshHomeData}
       />
     </div>
   );

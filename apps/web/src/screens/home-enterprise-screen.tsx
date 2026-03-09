@@ -1,6 +1,7 @@
 "use client";
 
 import { getEnterpriseHomePatientsAction } from "@/actions/get-enterprise-home-patients-action";
+import { getHomeEnterpriseDataAction } from "@/actions/get-home-enterprise-data-action";
 import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,19 +14,16 @@ import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { EnterpriseAppointment, HomeEnterpriseData } from "@/services/home-enterprise";
+import type { EnterpriseAppointment, EnterpriseProfessional } from "@/services/home-enterprise";
 import type { PatientWithGestationalInfo } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 import {
-  Activity,
   Baby,
   CalendarDays,
   Check,
-  Heart,
   ListFilter,
   Search,
-  SmilePlus,
   Stethoscope,
   UserPlusIcon,
   Users,
@@ -38,7 +36,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type HomeEnterpriseScreenProps = {
   profile: Tables<"users">;
-  homeData: HomeEnterpriseData;
 };
 
 type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
@@ -74,6 +71,99 @@ function PatientCardSkeleton() {
         <Skeleton className="h-4 w-40" />
         <Skeleton className="h-3 w-56" />
         <Skeleton className="mt-2 h-2 w-full rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function AgendaSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-7 w-20" />
+        <Skeleton className="h-9 w-9 rounded-md" />
+      </div>
+      <Card className="h-fit">
+        <CardContent className="space-y-6 py-4">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
+                <Skeleton className="h-3 w-3 rounded-full" />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
+  return (
+    <div className="flex h-full flex-col">
+      <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
+      <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-6">
+            {/* Professionals skeleton */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-7 w-36" />
+              </div>
+              <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
+                {[0, 1, 2].map((i) => (
+                  <Card key={i} className="w-44 shrink-0">
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Patient list skeleton */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-7 w-32" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                  <Skeleton className="h-9 w-9 rounded-md" />
+                </div>
+              </div>
+              <Card>
+                <CardContent className="p-0">
+                  <PatientCardSkeleton />
+                  <PatientCardSkeleton />
+                  <PatientCardSkeleton />
+                  <PatientCardSkeleton />
+                  <PatientCardSkeleton />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Agenda skeleton (desktop) */}
+          <div className="hidden lg:block">
+            <AgendaSkeleton />
+          </div>
+        </div>
+
+        {/* Agenda skeleton (mobile) */}
+        <div className="lg:hidden">
+          <AgendaSkeleton />
+        </div>
       </div>
     </div>
   );
@@ -159,9 +249,7 @@ const FILTER_LABELS: Record<FilterType, string> = {
   final: "Bebê a Termo",
 };
 
-export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpriseScreenProps) {
-  const { trimesterCounts, upcomingAppointments, professionals } = homeData;
-
+export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenProps) {
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,13 +260,27 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
   const filterRef = useRef<HTMLDivElement>(null);
 
   const {
+    execute: fetchHomeData,
+    result: homeDataResult,
+    isPending: isLoadingHome,
+  } = useAction(getHomeEnterpriseDataAction);
+
+  const {
     execute: fetchPatients,
     result: patientsResult,
-    isPending: isLoading,
+    isPending: isLoadingPatients,
   } = useAction(getEnterpriseHomePatientsAction);
 
+  useEffect(() => {
+    fetchHomeData({});
+  }, [fetchHomeData]);
+
+  const homeData = homeDataResult.data;
+  const upcomingAppointments = homeData?.upcomingAppointments ?? [];
+  const professionals = (homeData?.professionals ?? []) as EnterpriseProfessional[];
   const patients = (patientsResult.data?.patients ??
-    homeData.patients) as PatientWithGestationalInfo[];
+    homeData?.patients ??
+    []) as PatientWithGestationalInfo[];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -227,36 +329,18 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
 
   const activeLabel = FILTER_LABELS[activeFilter];
 
-  const trimesterCards = [
-    {
-      label: "1º Trimestre",
-      count: trimesterCounts.first,
-      subtitle: "Gestantes ativas",
-      icon: SmilePlus,
-      iconColor: "text-primary",
-      iconBg: "bg-muted",
-    },
-    {
-      label: "2º Trimestre",
-      count: trimesterCounts.second,
-      subtitle: "Acompanhamento regular",
-      icon: Activity,
-      iconColor: "text-primary",
-      iconBg: "bg-muted",
-    },
-    {
-      label: "3º Trimestre",
-      count: trimesterCounts.third,
-      subtitle: "Preparação para parto",
-      icon: Heart,
-      iconColor: "text-rose-500",
-      iconBg: "bg-rose-50",
-    },
-  ];
+  const refreshAll = useCallback(() => {
+    fetchHomeData({});
+    fetchPatients({ filter: activeFilter, search: searchQuery });
+  }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 
-  const hasAnyPatients = homeData.allPatientIds.length > 0;
+  if (isLoadingHome && !homeData) {
+    return <HomeEnterpriseScreenSkeleton profile={profile} />;
+  }
 
-  if (!hasAnyPatients) {
+  const hasAnyPatients = (homeData?.allPatientIds?.length ?? 0) > 0;
+
+  if (!hasAnyPatients && homeData) {
     return (
       <div className="flex h-full flex-col">
         <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
@@ -279,6 +363,7 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
           showModal={showNewPatient}
           setShowModal={setShowNewPatient}
           professionals={professionals}
+          onSuccess={refreshAll}
         />
       </div>
     );
@@ -289,26 +374,6 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
-        {/* Trimester Cards */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0">
-          {trimesterCards.map((card) => (
-            <Card key={card.label} className="w-52 shrink-0 sm:w-auto">
-              <CardContent className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-semibold text-muted-foreground text-sm">{card.label}</p>
-                  <p className="font-bold font-poppins text-3xl">{card.count}</p>
-                  <p className="text-muted-foreground text-xs">{card.subtitle}</p>
-                </div>
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full ${card.iconBg}`}
-                >
-                  <card.icon className={`h-6 w-6 ${card.iconColor}`} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           {/* Left: Professionals + Patient List */}
           <div className="space-y-6">
@@ -425,7 +490,7 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
 
               <Card>
                 <CardContent className="p-0">
-                  {isLoading ? (
+                  {isLoadingPatients ? (
                     <>
                       <PatientCardSkeleton />
                       <PatientCardSkeleton />
@@ -461,6 +526,13 @@ export default function HomeEnterpriseScreen({ profile, homeData }: HomeEnterpri
           <AppointmentTimeline appointments={upcomingAppointments} />
         </div>
       </div>
+
+      <NewPatientModal
+        showModal={showNewPatient}
+        setShowModal={setShowNewPatient}
+        professionals={professionals}
+        onSuccess={refreshAll}
+      />
     </div>
   );
 }

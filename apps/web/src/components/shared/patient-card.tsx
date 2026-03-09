@@ -1,6 +1,7 @@
 import { dayjs } from "@/lib/dayjs";
 import type { PatientWithGestationalInfo } from "@/types";
 import { getInitials } from "@/utils";
+import { Flame } from "lucide-react";
 
 export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }) {
   const formattedGestationalAge = (weeks: number, days: number) => {
@@ -28,14 +29,18 @@ export function PatientCard({ patient }: { patient: PatientWithGestationalInfo }
         <div className="flex items-center justify-between">
           <h4 className="font-medium">{patient.name}</h4>
         </div>
-        <p className="text-muted-foreground text-sm">
-          DPP: {dppFormatted} &bull;{" "}
-          <span className="text-muted-foreground">
+        <p className="flex gap-2 text-muted-foreground text-sm">
+          <span>DPP: {dppFormatted}</span>
+          &bull;
+          <span className="flex items-center gap-2 text-muted-foreground">
             {formattedGestationalAge(patient.weeks, patient.days)}
+            {patient.weeks >= 40 && (
+              <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
+            )}
           </span>
         </p>
         <div className="mt-2 flex items-center gap-2">
-          <div className="relative flex-1 overflow-hidden rounded-full bg-[url('/images/bg-pattern-2.svg')] bg-muted bg-repeat p-0.5 shadow">
+          <div className="relative flex-1 overflow-hidden rounded-full border border-[#DEC9C8] bg-[url('/images/bg-pattern-2.svg')] bg-muted bg-repeat p-[1px] shadow">
             <div
               className="inset-y-0 left-0 h-2 rounded-full bg-primary"
               style={{ width: `${patient.progress}%` }}

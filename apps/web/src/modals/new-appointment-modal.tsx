@@ -38,19 +38,19 @@ type NewAppointmentModalProps = {
   patients: Patient[];
   showModal: boolean;
   setShowModal: (open: boolean) => void;
-  callback?: VoidFunction;
+  onSuccess?: VoidFunction;
 };
 export default function NewAppointmentModal({
   patientId,
   patients,
   showModal,
   setShowModal,
-  callback,
+  onSuccess,
 }: NewAppointmentModalProps) {
   const { execute, status } = useAction(addAppointmentAction, {
     onSuccess: () => {
       toast.success("Agendamento criado com sucesso!");
-      callback?.();
+      onSuccess?.();
       setShowModal(false);
     },
     onError: ({ error }) => {
