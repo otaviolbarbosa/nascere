@@ -2,6 +2,7 @@
 
 import { cancelSubscriptionAction } from "@/actions/cancel-subscription-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
+import { isStaff } from "@/lib/access-control";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import type { Tables } from "@nascere/supabase/types";
 import { Building2, Calendar, CheckCircle2, CreditCard, RefreshCw, User } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -67,7 +69,6 @@ function formatCurrency(value: number | null): string {
 }
 
 export default function SubscriptionScreen({ subscription, profile }: SubscriptionScreenProps) {
-  const isEnterprise = !!profile.enterprise_id;
   const router = useRouter();
   const [confirmCancel, setConfirmCancel] = useState(false);
 
@@ -87,7 +88,7 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
   );
 
   const isCanceling = cancelStatus === "executing";
-  const canCancel = !isEnterprise && subscription?.status === "active";
+  const canCancel = !isStaff(profile) && subscription?.status === "active";
 
   if (!subscription) {
     return (
@@ -99,6 +100,9 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
         <p className="mt-2 text-center text-muted-foreground text-sm">
           Você ainda não possui uma assinatura ativa.
         </p>
+        <Button className="gradient-primary mt-6" asChild>
+          <Link href="/paywall">Assine o plano Mais Cuidado</Link>
+        </Button>
       </div>
     );
   }
@@ -170,13 +174,13 @@ export default function SubscriptionScreen({ subscription, profile }: Subscripti
             <CardTitle className="text-base">Titular</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-3">
-            {isEnterprise ? (
+            {isStaff(profile) ? (
               <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
             ) : (
               <User className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
             <span className="text-sm">
-              {isEnterprise ? "Empresa" : (profile.name ?? profile.email)}
+              {isStaff(profile) ? "Organização" : (profile.name ?? profile.email)}
             </span>
           </CardContent>
         </Card>

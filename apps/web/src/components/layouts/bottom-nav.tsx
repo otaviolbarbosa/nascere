@@ -18,8 +18,6 @@ export default function BottomNav() {
 
   const { execute, result } = useAction(getPendingInvitesAction);
 
-  console.log(profile);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     execute();
@@ -112,7 +110,7 @@ export default function BottomNav() {
               />
               <span
                 className={cn(
-                  "text-center font-medium font-poppins text-primary text-xs",
+                  "min-w-[90px] text-center font-medium font-poppins text-primary text-xs",
                   navItem.isActive && "text-white",
                 )}
               >
