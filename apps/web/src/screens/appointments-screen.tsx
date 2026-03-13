@@ -1,15 +1,18 @@
 "use client";
 
 import { getAppointmentsAction } from "@/actions/get-appointments-action";
+import { getEnterpriseProfessionalsAction } from "@/actions/get-enterprise-professionals-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
 import { Header } from "@/components/layouts/header";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
+import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { Button } from "@/components/ui/button";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
+import type { EnterpriseProfessional } from "@/services/professional";
 import type { Tables } from "@nascere/supabase";
 import { Calendar, ListIcon, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -17,6 +20,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
+  isStaff?: boolean;
 };
 
 type AgendaView = "list" | "calendar";
@@ -25,8 +29,10 @@ type Patient = Tables<"patients">;
 
 export default function AppointmentsScreen({
   appointments: initialAppointments,
+  isStaff = false,
 }: AppointmentsScreenProps) {
   const [showNewModal, setShowNewModal] = useState(false);
+  const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
   const [agendaView, setAgendaView] = useState<AgendaView>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("agenda-view");
@@ -47,15 +53,29 @@ export default function AppointmentsScreen({
   const calendarEndDate = dayjs().add(14, "day").format("YYYY-MM-DD");
 
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
-  const { execute: fetchAppointments, result: appointmentsResult } = useAction(getAppointmentsAction);
+  const { execute: fetchAppointments, result: appointmentsResult } =
+    useAction(getAppointmentsAction);
+  const { execute: fetchProfessionals, result: professionalsResult } = useAction(
+    getEnterpriseProfessionalsAction,
+  );
 
   useEffect(() => {
     fetchPatients();
     fetchAppointments({});
-  }, [fetchPatients, fetchAppointments]);
+    if (isStaff) fetchProfessionals({});
+  }, [fetchPatients, fetchAppointments, fetchProfessionals, isStaff]);
 
   const patients = (patientsResult.data?.patients ?? []) as Patient[];
-  const appointments = (appointmentsResult.data?.appointments ?? initialAppointments) as AppointmentWithPatient[];
+  const appointments = (appointmentsResult.data?.appointments ??
+    initialAppointments) as AppointmentWithPatient[];
+  const professionals = (professionalsResult.data?.professionals ?? []) as EnterpriseProfessional[];
+
+  function handleProfessionalSelect(id: string) {
+    const isSame = professionalFilter === id;
+    const newFilter = isSame ? null : id;
+    setProfessionalFilter(newFilter);
+    fetchAppointments({ professionalId: newFilter ?? undefined });
+  }
 
   function handleOpenNewModal() {
     setShowNewModal(true);
@@ -65,8 +85,18 @@ export default function AppointmentsScreen({
     <div>
       <Header title="Agenda" />
       <div className="space-y-4 p-4 pt-0 md:p-6 md:pt-0">
+        {isStaff && professionals.length > 0 && (
+          <ProfessionalsSelector
+            professionals={professionals}
+            selectedId={professionalFilter}
+            onSelect={handleProfessionalSelect}
+            getCountLabel={(prof) =>
+              prof.patient_count === 1 ? "1 gestante" : `${prof.patient_count} gestantes`
+            }
+          />
+        )}
+
         <div className="flex items-center justify-end gap-2">
-          {/* <PageHeader description="Meus agendamentos" /> */}
           <div className="flex items-center justify-end">
             <div className="inline-flex gap-1 rounded-full border p-1">
               <Button
@@ -120,16 +150,19 @@ export default function AppointmentsScreen({
             startDate={calendarStartDate}
             endDate={calendarEndDate}
             appointments={appointments}
+            showProfessional={isStaff}
           />
         ) : (
-          <AppointmentListView appointments={appointments} />
+          <AppointmentListView appointments={appointments} showProfessional={isStaff} />
         )}
       </div>
       <NewAppointmentModal
         showModal={showNewModal}
         setShowModal={setShowNewModal}
         patients={patients}
-        callback={() => fetchAppointments({})}
+        professionals={professionals}
+        isStaff={isStaff}
+        onSuccess={() => fetchAppointments({ professionalId: professionalFilter ?? undefined })}
       />
     </div>
   );

@@ -115,13 +115,7 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
   }, [isEditModalOpen, profileName, profilePhone, form]);
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push("/login");
-    } catch (error) {
-      console.error(error);
-      router.push("/login");
-    }
+    await signOut();
   };
 
   const { executeAsync: saveProfile } = useAction(updateProfileAction);
@@ -306,12 +300,12 @@ export default function ProfileScreen({ profile }: ProfileScreenProps) {
           <MenuItem
             icon={<CreditCard className="h-5 w-5" />}
             label="Minha Assinatura"
-            href="/billing"
+            href="/profile/subscription"
           />
           <MenuItem
             icon={<Bell className="h-5 w-5" />}
             label="Minhas Notificações"
-            href="/notifications"
+            href="/profile/notifications"
           />
         </div>
 

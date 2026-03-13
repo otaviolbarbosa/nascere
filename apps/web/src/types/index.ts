@@ -8,7 +8,11 @@ export type Invite = {
   id: string;
   professional_type: ProfessionalType | null;
   expires_at: string;
-  patient: { id: string; name: string; due_date: string; dum: string } | null;
+  patient: {
+    id: string;
+    name: string;
+    pregnancies: { due_date: string; dum: string | null }[];
+  } | null;
   inviter: { id: string; name: string; professional_type: string | null } | null;
 };
 
@@ -28,10 +32,15 @@ export type Professional = {
 };
 
 export type PatientWithGestationalInfo = Tables<"patients"> & {
+  due_date: string | null;
+  dum: string | null;
+  has_finished: boolean;
+  born_at: string | null;
+  observations: string | null;
   weeks: number;
   days: number;
   remainingDays: number;
   progress: number;
 };
 
-export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final";
+export type PatientFilter = "all" | "recent" | "trim1" | "trim2" | "trim3" | "final" | "finished";

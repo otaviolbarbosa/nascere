@@ -35,7 +35,7 @@ export async function GET() {
       .from("patients")
       .select("*")
       .in("id", patientIds)
-      .order("due_date", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -88,9 +88,7 @@ export async function POST(request: Request) {
       name: validation.data.name,
       email: validation.data.email,
       phone: validation.data.phone,
-      due_date: validation.data.due_date,
       address: validation.data.address,
-      observations: validation.data.observations,
       created_by: user.id,
     };
 
@@ -102,6 +100,20 @@ export async function POST(request: Request) {
 
     if (patientError) {
       return NextResponse.json({ error: patientError.message }, { status: 500 });
+    }
+
+    // Create the pregnancy record
+    const { error: pregnancyError } = await supabaseAdmin
+      .from("pregnancies")
+      .insert({
+        patient_id: patient.id,
+        due_date: validation.data.due_date,
+        observations: validation.data.observations,
+      });
+
+    if (pregnancyError) {
+      await supabaseAdmin.from("patients").delete().eq("id", patient.id);
+      return NextResponse.json({ error: pregnancyError.message }, { status: 500 });
     }
 
     // Add the creator as a team member

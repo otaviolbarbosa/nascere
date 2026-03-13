@@ -72,7 +72,7 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
         ) : (
           <div className="space-y-4">
             {invites.map((invite) => {
-              const gestationalAge = calculateGestationalAge(invite.patient?.dum);
+              const gestationalAge = calculateGestationalAge(invite.patient?.pregnancies?.[0]?.dum ?? null);
 
               return (
                 <Card key={invite.id}>
@@ -92,7 +92,7 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
                     </div>
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex flex-wrap gap-1 text-muted-foreground text-sm sm:gap-4">
-                        {invite.patient?.dum && (
+                        {invite.patient?.pregnancies?.[0]?.dum && (
                           <div className="flex items-center gap-1">
                             <Baby className="h-4 w-4" />
                             <span>
@@ -101,10 +101,10 @@ export default function InvitesScreen({ invites: initialInvites }: InvistesScree
                             </span>
                           </div>
                         )}
-                        {invite.patient?.due_date && (
+                        {invite.patient?.pregnancies?.[0]?.due_date && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>DPP: {dayjs(invite.patient.due_date).format("DD/MM/YYYY")}</span>
+                            <span>DPP: {dayjs(invite.patient.pregnancies[0].due_date).format("DD/MM/YYYY")}</span>
                           </div>
                         )}
                         <span>Expira em {dayjs(invite.expires_at).format("DD/MM/YYYY")}</span>

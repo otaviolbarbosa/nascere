@@ -17,8 +17,8 @@ import {
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { PatientFilter } from "@/types";
-import type { Tables } from "@nascere/supabase";
+import type { PatientFilter, TeamMember } from "@/types";
+import type { PatientWithPregnancyFields } from "@/services/patient";
 import { Baby, Check, ListFilter, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,11 +36,12 @@ const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
 const PATIENTS_PER_PAGE = 10;
 
 type PatientsScreenProps = {
-  patients: Tables<"patients">[];
+  patients: PatientWithPregnancyFields[];
   totalCount: number;
   currentPage: number;
   initialFilter: PatientFilter;
   initialSearch: string;
+  teamMembersMap: Record<string, TeamMember[]>;
 };
 
 export default function PatientsScreen({
@@ -49,6 +50,7 @@ export default function PatientsScreen({
   currentPage,
   initialFilter,
   initialSearch,
+  teamMembersMap,
 }: PatientsScreenProps) {
   const router = useRouter();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
@@ -246,11 +248,17 @@ export default function PatientsScreen({
                     <PatientCard
                       patient={{
                         ...patient,
+                        due_date: patient.due_date ?? null,
+                        dum: patient.dum ?? null,
+                        has_finished: false,
+                        born_at: null,
+                        observations: null,
                         weeks: weekInfo?.weeks ?? 0,
                         days: weekInfo?.days ?? 0,
                         remainingDays: 280 - (weekInfo?.totalDays ?? 0),
                         progress: ((weekInfo?.totalDays ?? 0) * 100) / 280,
                       }}
+                      teamMembers={teamMembersMap[patient.id] ?? []}
                     />
                   </Link>
                 );
@@ -311,7 +319,7 @@ export default function PatientsScreen({
       <NewPatientModal
         showModal={showNewPatientModal}
         setShowModal={setShowNewPatientModal}
-        callback={() => router.refresh()}
+        onSuccess={() => router.refresh()}
       />
     </div>
   );

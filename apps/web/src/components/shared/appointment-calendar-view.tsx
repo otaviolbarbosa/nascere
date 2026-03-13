@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
@@ -46,12 +46,14 @@ type AppointmentCalendarViewProps = {
   startDate: string;
   endDate: string;
   appointments: AppointmentWithPatient[];
+  showProfessional?: boolean;
 };
 
 export function AppointmentCalendarView({
   startDate,
   endDate,
   appointments,
+  showProfessional = false,
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -112,20 +114,29 @@ export function AppointmentCalendarView({
                 type="button"
                 onClick={() => setSelectedDate(day.key)}
                 className={cn(
-                  "flex shrink-0 flex-col items-center gap-1 rounded-xl px-3 py-2 text-sm transition-colors",
-                  isSelected
-                    ? "gradient-primary border-transparent text-white"
-                    : "border hover:bg-muted",
+                  "relative flex shrink-0 flex-col items-center gap-1 rounded-full border p-1.5 text-sm transition-colors",
+                  isSelected ? "gradient-primary border-transparent text-white" : "hover:bg-muted",
                 )}
               >
-                <span className="font-semibold">{day.dayNumber}</span>
-                <span className="text-xs capitalize">{day.month}</span>
+                <span
+                  className={cn(
+                    "font-medium text-[11px] text-primary capitalize",
+                    isSelected && "text-white",
+                  )}
+                >
+                  {day.month}
+                </span>
+                <span
+                  className={cn(
+                    "flex h-[32px] w-[32px] items-center justify-center rounded-full font-bold",
+                    isSelected && "bg-white text-accent-foreground",
+                  )}
+                >
+                  {day.dayNumber}
+                </span>
                 {hasAppointments && (
                   <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      isSelected ? "bg-white" : "bg-primary",
-                    )}
+                    className={cn("absolute bottom-2 h-1.5 w-1.5 rounded-full", "bg-primary")}
                   />
                 )}
               </button>
@@ -165,16 +176,19 @@ export function AppointmentCalendarView({
               <span className="-left-6 absolute top-[37px] size-3 rounded-full border-2 border-primary bg-primary" />
 
               <Link href={`/patients/${appointment.patient_id}/appointments`} className="block">
-                <Card className="transition-colors hover:bg-muted/50">
+                <Card className="shadow transition-colors hover:bg-muted/50">
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{appointment.patient.name}</span>
-                          {/* <Badge variant="outline" className="text-xs">
-                            {typeLabels[appointment.type] || appointment.type}
-                          </Badge> */}
                         </div>
+                        {showProfessional && appointment.professional?.name && (
+                          <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                            <Stethoscope className="h-3 w-3" />
+                            <span>{appointment.professional.name}</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-3 text-muted-foreground text-sm">
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />

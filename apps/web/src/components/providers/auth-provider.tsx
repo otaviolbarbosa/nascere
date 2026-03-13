@@ -1,5 +1,6 @@
 "use client";
 
+import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
 import { supabase } from "@nascere/supabase";
 import type { Tables } from "@nascere/supabase/types";
 import type { User } from "@supabase/supabase-js";
@@ -15,7 +16,7 @@ interface AuthContextType {
   signUp: (
     email: string,
     password: string,
-    metadata: { name: string; professional_type: string },
+    metadata: { name: string },
   ) => Promise<{ data: unknown; error: unknown }>;
   signOut: () => Promise<{ error: unknown }>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
@@ -23,6 +24,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isProfessional: boolean;
   isPatient: boolean;
+  isManager: boolean;
+  isSecretary: boolean;
+  isStaff: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -79,16 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
-  const signUp = async (
-    email: string,
-    password: string,
-    metadata: { name: string; professional_type: string },
-  ) => {
+  const signUp = async (email: string, password: string, metadata: { name: string }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: metadata,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login?confirmation=success`,
       },
     });
     return { data, error };
@@ -96,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    if (!error) {
+      // Hard navigation forces the server to re-read the session from scratch,
+      // evitando que o cache de server components do Next.js App Router
+      // mantenha a sessão antiga após o logout.
+      window.location.href = "/login";
+    }
     return { error };
   };
 
@@ -126,8 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     signInWithGoogle,
     isAuthenticated: !!user,
-    isProfessional: profile?.user_type === "professional",
-    isPatient: profile?.user_type === "patient",
+    isProfessional: isProfessional(profile),
+    isPatient: isPatient(profile),
+    isManager: isManager(profile),
+    isSecretary: isSecretary(profile),
+    isStaff: isStaff(profile),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

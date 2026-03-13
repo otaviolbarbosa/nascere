@@ -75,7 +75,7 @@ export default function PatientAppointmentsPage() {
           setShowModal={setShowNewModal}
           patientId={patientId}
           patients={patients}
-          callback={() => fetchAppointments({ patientId })}
+          onSuccess={() => fetchAppointments({ patientId })}
         />
       </>
     );
@@ -155,7 +155,7 @@ export default function PatientAppointmentsPage() {
         setShowModal={setShowNewModal}
         patientId={patientId}
         patients={patients}
-        callback={() => fetchAppointments({ patientId })}
+        onSuccess={() => fetchAppointments({ patientId })}
       />
     </>
   );
