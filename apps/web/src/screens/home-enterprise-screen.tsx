@@ -4,7 +4,7 @@ import { getEnterpriseHomePatientsAction } from "@/actions/get-enterprise-home-p
 import { getHomeEnterpriseDataAction } from "@/actions/get-home-enterprise-data-action";
 import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +15,8 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { EnterpriseAppointment, EnterpriseProfessional } from "@/services/home-enterprise";
-import type { PatientWithGestationalInfo } from "@/types";
+import { MONTH_LABELS_FULL } from "@/services/home";
+import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 import {
@@ -24,9 +25,9 @@ import {
   Check,
   ListFilter,
   Search,
-  Stethoscope,
+  TrendingDown,
+  TrendingUp,
   UserPlusIcon,
-  Users,
   X,
 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -40,27 +41,11 @@ type HomeEnterpriseScreenProps = {
 
 type FilterType = "all" | "final" | "recent" | "trim1" | "trim2" | "trim3";
 
-const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
-  obstetra: "Obstetra",
-  enfermeiro: "Enfermeiro(a)",
-  doula: "Doula",
-};
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Bom dia";
   if (hour < 18) return "Boa tarde";
   return "Boa noite";
-}
-
-function getInitials(name: string | null): string {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 function PatientCardSkeleton() {
@@ -84,9 +69,9 @@ function AgendaSkeleton() {
         <Skeleton className="h-9 w-9 rounded-md" />
       </div>
       <Card className="h-fit">
-        <CardContent className="space-y-6 py-4">
+        <CardContent className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex gap-3">
+            <div key={i} className="relative flex gap-3 pb-6 last:pb-0">
               <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
                 <Skeleton className="h-3 w-3 rounded-full" />
               </div>
@@ -109,29 +94,31 @@ function HomeEnterpriseScreenSkeleton({ profile }: { profile: Tables<"users"> })
     <div className="flex h-full flex-col">
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
+        {/* Professionals skeleton */}
+        <Skeleton className="h-12 w-full rounded-full sm:w-56" />
+
+        {/* DPP cards skeleton */}
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {[0, 1, 2, 3].map((i) => (
+            <Card key={i} className="shrink-0">
+              <CardContent className="px-4 py-3">
+                <div className="space-y-1">
+                  <div className="flex min-w-[120px] items-center justify-between gap-3">
+                    <Skeleton className="h-[28px] w-20" />
+                    <Skeleton className="h-[25px] w-10 rounded-full" />
+                  </div>
+                  <div className="flex items-baseline gap-4">
+                    <Skeleton className="h-[28px] w-6" />
+                    <Skeleton className="h-4 w-14" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-6">
-            {/* Professionals skeleton */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-5 w-5 rounded" />
-                <Skeleton className="h-7 w-36" />
-              </div>
-              <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
-                {[0, 1, 2].map((i) => (
-                  <Card key={i} className="w-44 shrink-0">
-                    <CardContent className="flex items-center gap-3 p-4">
-                      <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-16" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
 
             {/* Patient list skeleton */}
             <div className="space-y-4">
@@ -177,8 +164,8 @@ function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppoint
     return dayjs(date).format("DD MMM");
   }
 
-  function getTypeLabel(type: string, dum: string | null) {
-    const gestAge = calculateGestationalAge(dum);
+  function getTypeLabel(type: string, dum: string | null | undefined) {
+    const gestAge = calculateGestationalAge(dum ?? null);
     const weeksLabel = gestAge ? ` (${gestAge.weeks} sem)` : "";
     if (type === "consulta") return `Consulta Pré-natal${weeksLabel}`;
     return "Encontro Preparatório";
@@ -224,7 +211,7 @@ function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppoint
                     </p>
                     <p className="font-medium text-sm">{appointment.patient.name}</p>
                     <p className="text-muted-foreground text-xs">
-                      {getTypeLabel(appointment.type, appointment.patient.dum)}
+                      {getTypeLabel(appointment.type, appointment.patient.pregnancies?.[0]?.dum)}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       com {appointment.professional.name}
@@ -249,12 +236,15 @@ const FILTER_LABELS: Record<FilterType, string> = {
   final: "Bebê a Termo",
 };
 
+type DppFilter = { month: number; year: number } | null;
+
 export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenProps) {
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
+  const [dppFilter, setDppFilter] = useState<DppFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -271,16 +261,19 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     isPending: isLoadingPatients,
   } = useAction(getEnterpriseHomePatientsAction);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: running on mount
   useEffect(() => {
+    fetchPatients({ filter: activeFilter, search: searchQuery });
     fetchHomeData({});
-  }, [fetchHomeData]);
+  }, []);
 
   const homeData = homeDataResult.data;
   const upcomingAppointments = homeData?.upcomingAppointments ?? [];
   const professionals = (homeData?.professionals ?? []) as EnterpriseProfessional[];
-  const patients = (patientsResult.data?.patients ??
-    homeData?.patients ??
-    []) as PatientWithGestationalInfo[];
+  const dppByMonth = homeData?.dppByMonth ?? [];
+  const patientItems = (patientsResult.data?.items ??
+    homeData?.patients?.map((p) => ({ patient: p as PatientWithGestationalInfo, teamMembers: [] as TeamMember[] })) ??
+    []) as { patient: PatientWithGestationalInfo; teamMembers: TeamMember[] }[];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -294,30 +287,69 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showFilters]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchPatients on deps
-  const handleSearchToggle = useCallback(() => {
-    setShowSearch((prev) => {
-      if (prev) {
-        setSearchQuery("");
-        fetchPatients({ filter: activeFilter, search: "" });
-      } else {
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      }
-      return !prev;
-    });
-  }, [activeFilter]);
-
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
+    setDppFilter(null);
     setShowFilters(false);
-    fetchPatients({ filter, search: searchQuery });
+    fetchPatients({
+      filter,
+      search: searchQuery,
+      ...(professionalFilter ? { professionalId: professionalFilter } : {}),
+    });
+  };
+
+  const handleProfessionalFilterChange = (id: string) => {
+    const isSame = professionalFilter === id;
+    const newProfId = isSame ? null : id;
+    setProfessionalFilter(newProfId);
+    fetchPatients({
+      filter: activeFilter,
+      search: searchQuery,
+      ...(newProfId ? { professionalId: newProfId } : {}),
+      ...(dppFilter ? { dppMonth: dppFilter.month, dppYear: dppFilter.year } : {}),
+    });
+  };
+
+  const handleDppFilterChange = (month: number, year: number) => {
+    const isSame = dppFilter?.month === month && dppFilter?.year === year;
+    if (isSame) {
+      setDppFilter(null);
+      fetchPatients({
+        filter: activeFilter,
+        search: searchQuery,
+        ...(professionalFilter ? { professionalId: professionalFilter } : {}),
+      });
+    } else {
+      setDppFilter({ month, year });
+      fetchPatients({
+        filter: activeFilter,
+        search: searchQuery,
+        dppMonth: month,
+        dppYear: year,
+        ...(professionalFilter ? { professionalId: professionalFilter } : {}),
+      });
+    }
+  };
+
+  const handleClearDppFilter = () => {
+    setDppFilter(null);
+    fetchPatients({
+      filter: activeFilter,
+      search: searchQuery,
+      ...(professionalFilter ? { professionalId: professionalFilter } : {}),
+    });
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      fetchPatients({ filter: activeFilter, search: value });
+      fetchPatients({
+        filter: activeFilter,
+        search: value,
+        ...(professionalFilter ? { professionalId: professionalFilter } : {}),
+        ...(dppFilter ? { dppMonth: dppFilter.month, dppYear: dppFilter.year } : {}),
+      });
     }, 400);
   };
 
@@ -373,55 +405,99 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
     <div className="flex h-full flex-col">
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
 
-      <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Left: Professionals + Patient List */}
-          <div className="space-y-6">
-            {/* Professionals */}
-            {professionals.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                  <h2 className="font-poppins font-semibold text-xl">Profissionais</h2>
-                </div>
-                <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
-                  {professionals.map((prof) => (
-                    <Card key={prof.id} className="w-44 shrink-0 sm:w-auto">
-                      <CardContent className="flex items-center gap-3 p-4">
-                        <Avatar className="h-10 w-10 shrink-0">
-                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                            {getInitials(prof.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-sm">{prof.name ?? "—"}</p>
-                          <p className="text-muted-foreground text-xs">
-                            {prof.professional_type
-                              ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
-                                prof.professional_type)
-                              : "Profissional"}
-                          </p>
-                          <div className="mt-1 flex items-center gap-1">
-                            <Stethoscope className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-muted-foreground text-xs">
-                              {prof.patient_count}{" "}
-                              {prof.patient_count === 1 ? "gestante" : "gestantes"}
-                            </span>
+      <div className="space-y-6">
+        {/* Professionals */}
+        {professionals.length > 0 && (
+          <div className="px-4 md:px-6">
+            <ProfessionalsSelector
+              professionals={professionals}
+              selectedId={professionalFilter}
+              onSelect={handleProfessionalFilterChange}
+              getCountLabel={(prof) =>
+                prof.patient_count === 1 ? "1 gestante" : `${prof.patient_count} gestantes`
+              }
+            />
+          </div>
+        )}
+
+        <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
+          {/* DPP by Month Cards */}
+          {dppByMonth.length > 0 && (
+            <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+              {dppByMonth.map((item) => {
+                const isSelected = dppFilter?.month === item.month && dppFilter?.year === item.year;
+                return (
+                  <button
+                    key={`${item.year}-${item.month}`}
+                    type="button"
+                    onClick={() => handleDppFilterChange(item.month, item.year)}
+                  >
+                    <Card
+                      className={cn(
+                        "shrink-0 transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "hover:border-primary/40 hover:bg-muted/40",
+                      )}
+                    >
+                      <CardContent className="px-4 py-3">
+                        <div className="space-y-1">
+                          <div className="flex min-w-[120px] items-center justify-between gap-3">
+                            <p
+                              className={cn(
+                                "font-bold font-poppins text-lg",
+                                isSelected ? "text-primary" : "text-muted-foreground",
+                              )}
+                            >
+                              {MONTH_LABELS_FULL[item.month]}
+                            </p>
+                            {item.percentage !== 0 && (
+                              <div
+                                className={cn(
+                                  "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
+                                  item.percentage >= 0
+                                    ? "border-green-600/20 text-green-600"
+                                    : "border-destructive/20 text-destructive",
+                                )}
+                              >
+                                {Math.abs(item.percentage)}%
+                                {item.percentage >= 0 ? (
+                                  <TrendingUp className="size-3.5" />
+                                ) : (
+                                  <TrendingDown className="size-3.5" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-baseline gap-4">
+                            <p className="font-bold font-poppins text-xl">{item.count}</p>
+                            <span className="text-muted-foreground text-xs">Gestantes</span>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+            {/* Left: Patient List */}
             {/* Patient List */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="font-poppins font-semibold text-xl">Gestantes</h2>
                 <div className="flex items-center gap-2">
-                  {activeFilter !== "all" && (
+                  {dppFilter && (
+                    <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                      {MONTH_LABELS_FULL[dppFilter.month]}
+                      <button type="button" onClick={handleClearDppFilter}>
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {!dppFilter && activeFilter !== "all" && (
                     <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
                       {activeLabel}
                       <button type="button" onClick={() => handleFilterChange("all")}>
@@ -429,64 +505,56 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
                       </button>
                     </Badge>
                   )}
-
-                  <Button
-                    size="icon"
-                    variant={showSearch ? "secondary" : "outline"}
-                    onClick={handleSearchToggle}
-                  >
-                    {showSearch ? <X /> : <Search />}
-                  </Button>
-                  <div ref={filterRef} className="relative">
-                    <Button
-                      size="icon"
-                      variant={activeFilter !== "all" ? "secondary" : "outline"}
-                      onClick={() => setShowFilters((prev) => !prev)}
-                    >
-                      <ListFilter />
-                    </Button>
-                    <div
-                      className={cn(
-                        "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                        showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                      )}
-                    >
-                      {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                        <button
-                          key={filter}
-                          type="button"
-                          onClick={() => handleFilterChange(filter)}
-                          className={cn(
-                            "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                            activeFilter === filter && "font-medium text-primary",
-                          )}
-                        >
-                          <Check
-                            className={cn(
-                              "size-4 shrink-0",
-                              activeFilter === filter ? "opacity-100" : "opacity-0",
-                            )}
-                          />
-                          {FILTER_LABELS[filter]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 
-              {showSearch && (
-                <div className="relative">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
                   <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchInputRef}
                     placeholder="Buscar por nome"
-                    className="h-11 rounded-full bg-white pl-10"
+                    className="rounded-full bg-white pl-10"
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
                   />
                 </div>
-              )}
+                <div ref={filterRef} className="relative">
+                  <Button
+                    size="icon"
+                    variant={activeFilter !== "all" ? "secondary" : "outline"}
+                    onClick={() => setShowFilters((prev) => !prev)}
+                  >
+                    <ListFilter />
+                  </Button>
+                  <div
+                    className={cn(
+                      "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                      showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                    )}
+                  >
+                    {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => handleFilterChange(filter)}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                          activeFilter === filter && "font-medium text-primary",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "size-4 shrink-0",
+                            activeFilter === filter ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        {FILTER_LABELS[filter]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <Card>
                 <CardContent className="p-0">
@@ -496,16 +564,16 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
                       <PatientCardSkeleton />
                       <PatientCardSkeleton />
                     </>
-                  ) : patients.length === 0 ? (
+                  ) : patientItems.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 py-12 text-center">
                       <Baby className="h-10 w-10 text-muted-foreground/50" />
                       <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
                     </div>
                   ) : (
                     <div className="divider-y-1">
-                      {patients.map((patient) => (
+                      {patientItems.map(({ patient, teamMembers }) => (
                         <Link key={patient.id} href={`/patients/${patient.id}`}>
-                          <PatientCard patient={patient} />
+                          <PatientCard patient={patient} teamMembers={teamMembers} />
                         </Link>
                       ))}
                     </div>
@@ -513,17 +581,17 @@ export default function HomeEnterpriseScreen({ profile }: HomeEnterpriseScreenPr
                 </CardContent>
               </Card>
             </div>
+
+            {/* Right: Agenda */}
+            <div className="hidden lg:block">
+              <AppointmentTimeline appointments={upcomingAppointments} />
+            </div>
           </div>
 
-          {/* Right: Agenda */}
-          <div className="hidden lg:block">
+          {/* Mobile: Agenda */}
+          <div className="lg:hidden">
             <AppointmentTimeline appointments={upcomingAppointments} />
           </div>
-        </div>
-
-        {/* Mobile: Agenda */}
-        <div className="lg:hidden">
-          <AppointmentTimeline appointments={upcomingAppointments} />
         </div>
       </div>
 

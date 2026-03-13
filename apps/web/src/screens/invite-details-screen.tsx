@@ -32,7 +32,7 @@ export default function InviteDetailsScreen({ invite }: InviteDetailsScreenProps
 
   if (!invite) return null;
 
-  const gestationalAge = calculateGestationalAge(invite.patient?.dum);
+  const gestationalAge = calculateGestationalAge(invite.patient?.pregnancies?.[0]?.dum ?? null);
   const inviterTypeLabel =
     professionalTypeLabels[invite.inviter?.professional_type ?? ""] ??
     invite.inviter?.professional_type;
@@ -92,13 +92,13 @@ export default function InviteDetailsScreen({ invite }: InviteDetailsScreenProps
                   </span>
                 </div>
               )}
-              {invite.patient?.due_date && (
+              {invite.patient?.pregnancies?.[0]?.due_date && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4 shrink-0" />
                   <span>
                     DPP:{" "}
                     <span className="font-medium text-foreground">
-                      {dayjs(invite.patient.due_date).format("DD/MM/YYYY")}
+                      {dayjs(invite.patient.pregnancies[0].due_date).format("DD/MM/YYYY")}
                     </span>
                   </span>
                 </div>

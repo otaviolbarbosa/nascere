@@ -6,9 +6,10 @@ import {
 import { scheduleBillingNotifications } from "@/lib/billing/notifications";
 import { sendNotificationToTeam } from "@/lib/notifications/send";
 import { getNotificationTemplate } from "@/lib/notifications/templates";
+import { getServerUser } from "@/lib/server-auth";
 import type { CreateBillingInput } from "@/lib/validations/billing";
 import {
-  type createServerSupabaseAdmin,
+  createServerSupabaseAdmin,
   createServerSupabaseClient,
 } from "@nascere/supabase/server";
 import type { Tables } from "@nascere/supabase/types";
@@ -41,6 +42,102 @@ export type DashboardMetrics = {
   by_payment_method: Record<string, number>;
   upcoming_due: number;
 };
+
+export type EnterpriseBillingProfessional = {
+  id: string;
+  name: string | null;
+  professional_type: string | null;
+  billing_count: number;
+};
+
+export async function getEnterpriseBillings(
+  enterpriseId: string,
+  startDate?: string,
+  endDate?: string,
+  professionalId?: string,
+): Promise<{
+  billings: BillingWithInstallments[];
+  metrics: DashboardMetrics | null;
+  professionals: EnterpriseBillingProfessional[];
+}> {
+  const supabase = await createServerSupabaseClient();
+  const supabaseAdmin = await createServerSupabaseAdmin();
+
+  const { data: professionalsData } = await supabase
+    .from("users")
+    .select("id, name, professional_type")
+    .eq("enterprise_id", enterpriseId)
+    .eq("user_type", "professional");
+
+  const professionals = professionalsData ?? [];
+  const allIds = professionals.map((p) => p.id);
+  const targetIds = professionalId ? [professionalId] : allIds;
+
+  if (targetIds.length === 0) {
+    return { billings: [], metrics: null, professionals: [] };
+  }
+
+  let query = supabaseAdmin
+    .from("billings")
+    .select(`
+      *,
+      installments(*),
+      patient:patients!billings_patient_id_fkey(id, name)
+    `)
+    .in("professional_id", targetIds)
+    .order("created_at", { ascending: false })
+    .order("installment_number", { ascending: true, referencedTable: "installments" });
+
+  if (startDate) query = query.gte("installments.due_date", startDate);
+  if (endDate) query = query.lte("installments.due_date", endDate);
+
+  const { data, error } = await query;
+  if (error) return { billings: [], metrics: null, professionals: [] };
+
+  const billings = (data as BillingWithInstallments[]) ?? [];
+
+  const metrics: DashboardMetrics = {
+    total_amount: 0,
+    paid_amount: 0,
+    pending_amount: 0,
+    overdue_amount: 0,
+    total_billings: billings.length,
+    by_status: {},
+    by_payment_method: {},
+    upcoming_due: 0,
+  };
+
+  for (const billing of billings) {
+    metrics.paid_amount += billing.paid_amount;
+    metrics.by_status[billing.status] = (metrics.by_status[billing.status] || 0) + 1;
+    metrics.by_payment_method[billing.payment_method] =
+      (metrics.by_payment_method[billing.payment_method] || 0) + 1;
+
+    for (const inst of billing.installments) {
+      if (inst.status === "atrasado") {
+        metrics.overdue_amount += inst.amount - inst.paid_amount;
+      }
+      if (inst.status === "pendente") {
+        metrics.upcoming_due += inst.amount - inst.paid_amount;
+      }
+    }
+  }
+
+  const billingCountByProfessional: Record<string, number> = {};
+  for (const billing of billings) {
+    billingCountByProfessional[billing.professional_id] =
+      (billingCountByProfessional[billing.professional_id] ?? 0) + 1;
+  }
+
+  const professionalsWithCount: EnterpriseBillingProfessional[] = professionals.map((p) => ({
+    id: p.id,
+    name: p.name,
+    professional_type: p.professional_type,
+    billing_count: billingCountByProfessional[p.id] ?? 0,
+  }));
+
+  return { billings, metrics, professionals: professionalsWithCount };
+}
 
 export async function getPatientBillings(patientId: string) {
   const supabase = await createServerSupabaseClient();
@@ -77,11 +174,7 @@ export async function getBillingById(billingId: string) {
 }
 
 export async function getAllBillings() {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getServerUser();
 
   if (!user) return { billings: [], error: "Não autorizado" };
 
@@ -100,11 +193,7 @@ export async function getAllBillings() {
 }
 
 export async function getBillings(startDate?: string, endDate?: string) {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getServerUser();
 
   if (!user) return { billings: [], error: "Não autorizado" };
 
@@ -128,11 +217,7 @@ export async function getBillings(startDate?: string, endDate?: string) {
 }
 
 export async function getDashboardMetrics(startDate?: string, endDate?: string) {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getServerUser();
 
   if (!user) return { metrics: null, error: "Não autorizado" };
 

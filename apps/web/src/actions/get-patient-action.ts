@@ -12,11 +12,24 @@ export const getPatientAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase } }) => {
     const { data: patient, error } = await supabase
       .from("patients")
-      .select("*")
+      .select("*, pregnancies(id, due_date, dum, has_finished, born_at, observations, created_at, updated_at, patient_id)")
       .eq("id", parsedInput.patientId)
       .single();
 
     if (error) throw new Error(error.message);
 
-    return { patient };
+    const pregnancy = patient?.pregnancies?.[0] ?? null;
+
+    return {
+      patient: {
+        ...patient,
+        pregnancies: undefined,
+        due_date: pregnancy?.due_date ?? null,
+        dum: pregnancy?.dum ?? null,
+        has_finished: pregnancy?.has_finished ?? false,
+        born_at: pregnancy?.born_at ?? null,
+        observations: pregnancy?.observations ?? null,
+      },
+      pregnancy,
+    };
   });

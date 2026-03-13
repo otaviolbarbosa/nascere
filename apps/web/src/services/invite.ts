@@ -37,7 +37,7 @@ export async function getMyInvites(): Promise<GetMyInvitesResult> {
     .from("team_invites")
     .select(`
       *,
-      patient:patients!team_invites_patient_id_fkey(id, name, due_date, dum),
+      patient:patients!team_invites_patient_id_fkey(id, name, pregnancies(due_date, dum)),
       inviter:users!team_invites_invited_by_fkey(id, name, professional_type)
     `)
     .eq("invited_professional_id", user.id)
@@ -59,7 +59,7 @@ export async function getInviteById(inviteId: string): Promise<GetInviteByIdResu
     .from("team_invites")
     .select(`
       *,
-      patient:patients!team_invites_patient_id_fkey(id, name, due_date, dum),
+      patient:patients!team_invites_patient_id_fkey(id, name, pregnancies(due_date, dum)),
       inviter:users!team_invites_invited_by_fkey(id, name, professional_type)
     `)
     .eq("id", inviteId)
@@ -79,7 +79,7 @@ export async function getPendingInviteById(inviteId: string): Promise<GetInviteB
     .from("team_invites")
     .select(`
       *,
-      patient:patients!team_invites_patient_id_fkey(id, name, due_date, dum),
+      patient:patients!team_invites_patient_id_fkey(id, name, pregnancies(due_date, dum)),
       inviter:users!team_invites_invited_by_fkey(id, name, professional_type)
     `)
     .eq("id", inviteId)

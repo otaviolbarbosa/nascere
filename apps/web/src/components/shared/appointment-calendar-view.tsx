@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, MapPin, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 
@@ -46,12 +46,14 @@ type AppointmentCalendarViewProps = {
   startDate: string;
   endDate: string;
   appointments: AppointmentWithPatient[];
+  showProfessional?: boolean;
 };
 
 export function AppointmentCalendarView({
   startDate,
   endDate,
   appointments,
+  showProfessional = false,
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -180,10 +182,13 @@ export function AppointmentCalendarView({
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{appointment.patient.name}</span>
-                          {/* <Badge variant="outline" className="text-xs">
-                            {typeLabels[appointment.type] || appointment.type}
-                          </Badge> */}
                         </div>
+                        {showProfessional && appointment.professional?.name && (
+                          <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                            <Stethoscope className="h-3 w-3" />
+                            <span>{appointment.professional.name}</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-3 text-muted-foreground text-sm">
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />

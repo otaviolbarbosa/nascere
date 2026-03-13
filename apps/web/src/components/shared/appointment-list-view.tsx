@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { dayjs } from "@/lib/dayjs";
 import type { AppointmentWithPatient } from "@/services/appointment";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, Stethoscope } from "lucide-react";
 import Link from "next/link";
 
 const statusLabels: Record<string, string> = {
@@ -45,6 +45,7 @@ type AppointmentGroupProps = {
   isPastList?: boolean;
   emptyTitle: string;
   emptyDescription: string;
+  showProfessional?: boolean;
 };
 
 function AppointmentGroup({
@@ -52,6 +53,7 @@ function AppointmentGroup({
   isPastList = false,
   emptyTitle,
   emptyDescription,
+  showProfessional = false,
 }: AppointmentGroupProps) {
   const groupedAppointments = groupAppointmentsByDate(appointments);
   const sortedDates = Object.keys(groupedAppointments).sort((a, b) =>
@@ -99,6 +101,12 @@ function AppointmentGroup({
                               {typeLabels[appointment.type] || appointment.type}
                             </Badge>
                           </div>
+                          {showProfessional && appointment.professional?.name && (
+                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                              <Stethoscope className="h-3 w-3" />
+                              <span>{appointment.professional.name}</span>
+                            </div>
+                          )}
                           <div className="flex flex-wrap gap-3 text-muted-foreground text-sm">
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
@@ -138,9 +146,10 @@ function AppointmentGroup({
 
 type AppointmentListViewProps = {
   appointments: AppointmentWithPatient[];
+  showProfessional?: boolean;
 };
 
-export function AppointmentListView({ appointments }: AppointmentListViewProps) {
+export function AppointmentListView({ appointments, showProfessional = false }: AppointmentListViewProps) {
   const now = dayjs();
 
   const upcomingAppointments = appointments.filter((appointment) => {
@@ -179,6 +188,7 @@ export function AppointmentListView({ appointments }: AppointmentListViewProps) 
           appointments={upcomingAppointments}
           emptyTitle="Nenhum agendamento próximo"
           emptyDescription="Você não possui agendamentos futuros. Adicione um agendamento a partir do perfil de uma gestante."
+          showProfessional={showProfessional}
         />
       </TabsContent>
 
@@ -188,6 +198,7 @@ export function AppointmentListView({ appointments }: AppointmentListViewProps) 
           isPastList
           emptyTitle="Nenhum agendamento anterior"
           emptyDescription="Você ainda não possui agendamentos realizados."
+          showProfessional={showProfessional}
         />
       </TabsContent>
     </Tabs>

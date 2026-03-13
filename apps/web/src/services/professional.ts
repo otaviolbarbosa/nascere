@@ -1,4 +1,5 @@
-import { createServerSupabaseAdmin, createServerSupabaseClient } from "@nascere/supabase/server";
+import { getServerAuth } from "@/lib/server-auth";
+import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 
 export type EnterpriseProfessional = {
   id: string;
@@ -14,24 +15,12 @@ export type GetEnterpriseProfessionalsResult = {
 };
 
 export async function getEnterpriseProfessionals(): Promise<GetEnterpriseProfessionalsResult> {
-  const supabase = await createServerSupabaseClient();
+  const { supabase, profile } = await getServerAuth();
   const supabaseAdmin = await createServerSupabaseAdmin();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  if (!profile?.enterprise_id) return { professionals: [], enterpriseToken: null };
 
-  if (!user) return { professionals: [], enterpriseToken: null };
-
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("enterprise_id")
-    .eq("id", user.id)
-    .single();
-
-  if (!currentUser?.enterprise_id) return { professionals: [], enterpriseToken: null };
-
-  const enterpriseId = currentUser.enterprise_id;
+  const enterpriseId = profile.enterprise_id;
 
   const [{ data: enterprise }, { data: professionals }] = await Promise.all([
     supabase.from("enterprises").select("token").eq("id", enterpriseId).single(),

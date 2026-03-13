@@ -13,12 +13,12 @@ export const finishPatientCareAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { supabase, user } }) => {
     const { error: updateError } = await supabase
-      .from("patients")
+      .from("pregnancies")
       .update({
         has_finished: true,
         born_at: parsedInput.bornAt ?? null,
       })
-      .eq("id", parsedInput.patientId);
+      .eq("patient_id", parsedInput.patientId);
 
     if (updateError) throw new Error(updateError.message);
 

@@ -13,6 +13,7 @@ const appointmentStatuses = [
 
 export const createAppointmentSchema = z.object({
   patient_id: z.string().uuid("ID do paciente inválido"),
+  professional_id: z.string().uuid().optional(),
   date: z.string().refine((date) => !Number.isNaN(Date.parse(date)), {
     message: "Data inválida",
   }),

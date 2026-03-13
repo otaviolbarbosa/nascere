@@ -1,8 +1,9 @@
+import { getServerUser } from "@/lib/server-auth";
 import type { CreatePatientInput } from "@/lib/validations/patient";
-import type { PatientFilter } from "@/types";
+import type { PatientFilter, TeamMember } from "@/types";
 import {
-  createServerSupabaseClient,
   type createServerSupabaseAdmin,
+  createServerSupabaseClient,
 } from "@nascere/supabase/server";
 import type { Tables, TablesInsert } from "@nascere/supabase/types";
 
@@ -11,11 +12,20 @@ type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>
 
 type Patient = Tables<"patients">;
 
+export type PatientWithPregnancyFields = Patient & {
+  due_date?: string | null;
+  dum?: string | null;
+  has_finished?: boolean;
+  born_at?: string | null;
+  observations?: string | null;
+};
+
 const PATIENTS_PER_PAGE = 10;
 
 type GetMyPatientsResult = {
-  patients: Patient[];
+  patients: PatientWithPregnancyFields[];
   totalCount: number;
+  teamMembersMap: Record<string, TeamMember[]>;
   error?: string;
 };
 
@@ -24,26 +34,22 @@ export async function getMyPatients(
   search = "",
   page = 1,
 ): Promise<GetMyPatientsResult> {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getServerUser();
 
   if (!user) {
-    return { patients: [], totalCount: 0, error: "Usuário não encontrado" };
+    return { patients: [], totalCount: 0, teamMembersMap: {}, error: "Usuário não encontrado" };
   }
 
   // Get patients where user is a team member
-  const { data: teamMembers } = await supabase
+  const { data: myTeamMemberships } = await supabase
     .from("team_members")
     .select("patient_id")
     .eq("professional_id", user.id);
 
-  const patientIds = teamMembers?.map((tm) => tm.patient_id) || [];
+  const patientIds = myTeamMemberships?.map((tm) => tm.patient_id) || [];
 
   if (patientIds.length === 0) {
-    return { patients: [], totalCount: 0 };
+    return { patients: [], totalCount: 0, teamMembersMap: {} };
   }
 
   const offset = (page - 1) * PATIENTS_PER_PAGE;
@@ -56,10 +62,26 @@ export async function getMyPatients(
     page_offset: offset,
   });
 
-  const rows = (data as (Patient & { total_count: number })[]) || [];
+  const rows = (data as (PatientWithPregnancyFields & { total_count: number })[]) || [];
   const totalCount = rows.length > 0 ? Number(rows[0]?.total_count) : 0;
 
-  return { patients: rows, totalCount };
+  const pagePatientIds = rows.map((r) => r.id);
+  const teamMembersMap: Record<string, TeamMember[]> = {};
+
+  if (pagePatientIds.length > 0) {
+    const { data: teamMembersData } = await supabase
+      .from("team_members")
+      .select("id, patient_id, professional_id, professional_type, joined_at, professional:users(id, name, email, avatar_url)")
+      .in("patient_id", pagePatientIds);
+
+    for (const tm of teamMembersData ?? []) {
+      const pid = (tm as typeof tm & { patient_id: string }).patient_id;
+      if (!teamMembersMap[pid]) teamMembersMap[pid] = [];
+      teamMembersMap[pid].push(tm as unknown as TeamMember);
+    }
+  }
+
+  return { patients: rows, totalCount, teamMembersMap };
 }
 
 export async function getPatientById(patientId: string): Promise<Patient | null> {
@@ -97,10 +119,7 @@ export async function createPatient(
     name: data.name,
     email: data.email,
     phone: data.phone,
-    due_date: data.due_date,
-    dum: data.dum,
     address: data.address,
-    observations: data.observations,
     created_by: targetProfessionalId,
   };
 
@@ -112,6 +131,21 @@ export async function createPatient(
 
   if (patientError) {
     throw new Error(patientError.message);
+  }
+
+  // Create pregnancy record with due_date, dum, observations
+  const { error: pregnancyError } = await supabaseAdmin
+    .from("pregnancies")
+    .insert({
+      patient_id: patient.id,
+      due_date: data.due_date,
+      dum: data.dum,
+      observations: data.observations,
+    } satisfies TablesInsert<"pregnancies">);
+
+  if (pregnancyError) {
+    await supabaseAdmin.from("patients").delete().eq("id", patient.id);
+    throw new Error(pregnancyError.message);
   }
 
   if (profile.professional_type) {
