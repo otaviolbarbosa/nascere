@@ -51,12 +51,12 @@ function getGreeting() {
 
 function PatientCardSkeleton() {
   return (
-    <div className="flex items-center gap-4 border-b p-4 last:border-b-0">
+    <div className="flex items-center gap-4 p-4">
       <Skeleton className="h-12 w-12 rounded-full" />
       <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-3 w-56" />
-        <Skeleton className="mt-2 h-2 w-full rounded-full" />
+        <Skeleton className="h-5 w-40" />
+        <Skeleton className="h-4 w-56" />
+        <Skeleton className="mt-2 h-3 w-full rounded-full" />
       </div>
     </div>
   );
@@ -73,9 +73,9 @@ function AgendaSkeleton() {
         </div>
       </div>
       <Card className="h-fit">
-        <CardContent className="space-y-6 py-4">
+        <CardContent className="space-y-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="flex gap-3">
+            <div key={i} className="relative flex gap-3 pb-6 last:pb-0">
               <div className="relative z-10 mt-1 flex h-5 w-5 shrink-0 items-center justify-center">
                 <Skeleton className="h-3 w-3 rounded-full" />
               </div>
@@ -98,15 +98,20 @@ function HomeScreenSkeleton({ profile }: { profile: Tables<"users"> }) {
       <Header title={`${getGreeting()}, ${getFirstName(profile.name)}!`} />
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* DPP cards skeleton */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
           {[0, 1, 2, 3].map((i) => (
-            <Card key={i} className="w-36 shrink-0">
-              <CardContent className="flex items-center justify-between p-2.5">
+            <Card key={i} className="shrink-0">
+              <CardContent className="px-4 py-3">
                 <div className="space-y-1">
-                  <Skeleton className="h-6 w-8" />
-                  <Skeleton className="h-3 w-10" />
+                  <div className="flex min-w-[120px] items-center justify-between gap-3">
+                    <Skeleton className="h-[28px] w-20" />
+                    <Skeleton className="h-[25px] w-10 rounded-full" />
+                  </div>
+                  <div className="flex items-baseline gap-4">
+                    <Skeleton className="h-[28px] w-6" />
+                    <Skeleton className="h-4 w-14" />
+                  </div>
                 </div>
-                <Skeleton className="h-10 w-10 rounded-lg" />
               </CardContent>
             </Card>
           ))}
@@ -161,8 +166,8 @@ function AppointmentTimeline({
     return dayjs(date).format("DD MMM");
   }
 
-  function getTypeLabel(type: string, dum: string | null) {
-    const gestAge = calculateGestationalAge(dum);
+  function getTypeLabel(type: string, dum: string | null | undefined) {
+    const gestAge = calculateGestationalAge(dum ?? null);
     const weeksLabel = gestAge ? ` (${gestAge.weeks} sem)` : "";
     if (type === "consulta") return `Consulta Pré-natal${weeksLabel}`;
     return "Encontro Preparatório";
@@ -227,7 +232,7 @@ function AppointmentTimeline({
                     </p>
                     <p className="font-medium text-sm">{appointment.patient.name}</p>
                     <p className="text-muted-foreground text-xs">
-                      {getTypeLabel(appointment.type, appointment.patient.dum)}
+                      {getTypeLabel(appointment.type, appointment.patient.pregnancies?.[0]?.dum)}
                     </p>
                   </div>
                 </div>
@@ -249,13 +254,15 @@ const FILTER_LABELS: Record<FilterType, string> = {
   final: "Bebê a Termo",
 };
 
+type DppFilter = { month: number; year: number } | null;
+
 export default function HomeScreen({ profile }: HomeScreenProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [dppFilter, setDppFilter] = useState<DppFilter>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showNewPatient, setShowNewPatient] = useState(false);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -303,23 +310,27 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
     setShowFilters((prev) => !prev);
   }, []);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: no need to add fetchPatients on deps
-  const handleSearchToggle = useCallback(() => {
-    setShowSearch((prev) => {
-      if (prev) {
-        setSearchQuery("");
-        fetchPatients({ filter: activeFilter, search: "" });
-      } else {
-        setTimeout(() => searchInputRef.current?.focus(), 50);
-      }
-      return !prev;
-    });
-  }, [activeFilter]);
-
   const handleFilterChange = (filter: FilterType) => {
     setActiveFilter(filter);
+    setDppFilter(null);
     setShowFilters(false);
     fetchPatients({ filter, search: searchQuery });
+  };
+
+  const handleDppFilterChange = (month: number, year: number) => {
+    const isSame = dppFilter?.month === month && dppFilter?.year === year;
+    if (isSame) {
+      setDppFilter(null);
+      fetchPatients({ filter: activeFilter, search: searchQuery });
+    } else {
+      setDppFilter({ month, year });
+      fetchPatients({ filter: activeFilter, search: searchQuery, dppMonth: month, dppYear: year });
+    }
+  };
+
+  const handleClearDppFilter = () => {
+    setDppFilter(null);
+    fetchPatients({ filter: activeFilter, search: searchQuery });
   };
 
   const activeLabel = FILTER_LABELS[activeFilter];
@@ -328,7 +339,11 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
     setSearchQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      fetchPatients({ filter: activeFilter, search: value });
+      fetchPatients({
+        filter: activeFilter,
+        search: value,
+        ...(dppFilter ? { dppMonth: dppFilter.month, dppYear: dppFilter.year } : {}),
+      });
     }, 400);
   };
 
@@ -347,7 +362,7 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
     fetchPatients({ filter: activeFilter, search: searchQuery });
   }, [fetchHomeData, fetchPatients, activeFilter, searchQuery]);
 
-  if (isLoadingHome && !homeData) {
+  if (isLoadingHome || !homeData) {
     return <HomeScreenSkeleton profile={profile} />;
   }
 
@@ -385,46 +400,62 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
 
       <div className="flex flex-1 flex-col space-y-4 px-4 pt-0 pb-28 sm:pb-4 md:px-6">
         {/* DPP by Month Cards */}
-        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:overflow-visible sm:px-0">
-          {dppByMonth.map((item) => (
-            <Card key={`${item.year}-${item.month}`} className="shrink-0">
-              <CardContent className="flex items-center justify-between px-4 py-3">
-                <div className="space-y-1">
-                  <div className="flex min-w-[120px] items-center justify-between gap-3">
-                    <p className="font-bold font-poppings text-lg text-muted-foreground">
-                      {MONTH_LABELS_FULL[item.month]}
-                    </p>
-                    {item.percentage !== 0 && (
-                      <div
-                        className={cn(
-                          "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
-                          item.percentage >= 0
-                            ? "border-green-600/20 text-green-600"
-                            : "border-destructive/20 text-destructive",
-                        )}
-                      >
-                        {Math.abs(item.percentage)}%
-                        {item.percentage >= 0 ? (
-                          <TrendingUp className="size-3.5" />
-                        ) : (
-                          <TrendingDown className="size-3.5" />
+        <div className="-mx-4 no-scrollbar flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {dppByMonth.map((item) => {
+            const isSelected = dppFilter?.month === item.month && dppFilter?.year === item.year;
+            return (
+              <button
+                key={`${item.year}-${item.month}`}
+                type="button"
+                onClick={() => handleDppFilterChange(item.month, item.year)}
+              >
+                <Card
+                  className={cn(
+                    "shrink-0 transition-colors",
+                    isSelected
+                      ? "border-primary bg-primary/5"
+                      : "hover:border-primary/40 hover:bg-muted/40",
+                  )}
+                >
+                  <CardContent className="flex items-center justify-between px-4 py-3">
+                    <div className="space-y-1">
+                      <div className="flex min-w-[120px] items-center justify-between gap-3">
+                        <p
+                          className={cn(
+                            "font-bold font-poppings text-lg",
+                            isSelected ? "text-primary" : "text-muted-foreground",
+                          )}
+                        >
+                          {MONTH_LABELS_FULL[item.month]}
+                        </p>
+                        {item.percentage !== 0 && (
+                          <div
+                            className={cn(
+                              "flex items-start gap-0.5 rounded-full border px-2 py-0.5 font-medium text-[10px]",
+                              item.percentage >= 0
+                                ? "border-green-600/20 text-green-600"
+                                : "border-destructive/20 text-destructive",
+                            )}
+                          >
+                            {Math.abs(item.percentage)}%
+                            {item.percentage >= 0 ? (
+                              <TrendingUp className="size-3.5" />
+                            ) : (
+                              <TrendingDown className="size-3.5" />
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-4">
-                    <p className="font-bold font-poppins text-xl">{item.count}</p>
-                    <span className="text-muted-foreground text-xs">Gestates</span>
-                  </div>
-                </div>
-                {/* <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <span className="font-semibold text-muted-foreground text-sm">
-                    {MONTH_LABELS_SHORT[item.month]}
-                  </span>
-                </div> */}
-              </CardContent>
-            </Card>
-          ))}
+                      <div className="flex items-baseline gap-4">
+                        <p className="font-bold font-poppins text-xl">{item.count}</p>
+                        <span className="text-muted-foreground text-xs">Gestates</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </button>
+            );
+          })}
         </div>
 
         {/* Main Content: Two columns */}
@@ -435,7 +466,15 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
             <div className="flex items-center justify-between">
               <h2 className="font-poppins font-semibold text-xl">Minhas Gestantes</h2>
               <div className="flex items-center gap-2">
-                {activeFilter !== "all" && (
+                {dppFilter && (
+                  <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
+                    {MONTH_LABELS_FULL[dppFilter.month]}
+                    <button type="button" onClick={handleClearDppFilter}>
+                      <X className="size-3" />
+                    </button>
+                  </Badge>
+                )}
+                {!dppFilter && activeFilter !== "all" && (
                   <Badge variant="secondary" className="gap-1 px-3 py-1.5 text-sm">
                     {activeLabel}
                     <button type="button" onClick={() => handleFilterChange("all")}>
@@ -444,48 +483,6 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
                   </Badge>
                 )}
 
-                <Button
-                  size="icon"
-                  variant={showSearch ? "secondary" : "outline"}
-                  onClick={handleSearchToggle}
-                >
-                  {showSearch ? <X /> : <Search />}
-                </Button>
-                <div ref={filterRef} className="relative">
-                  <Button
-                    size="icon"
-                    variant={activeFilter !== "all" ? "secondary" : "outline"}
-                    onClick={handleFilterToggle}
-                  >
-                    <ListFilter />
-                  </Button>
-                  <div
-                    className={cn(
-                      "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
-                      showFilters ? "opacity-100" : "pointer-events-none opacity-0",
-                    )}
-                  >
-                    {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
-                      <button
-                        key={filter}
-                        type="button"
-                        onClick={() => handleFilterChange(filter)}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                          activeFilter === filter && "font-medium text-primary",
-                        )}
-                      >
-                        <Check
-                          className={cn(
-                            "size-4 shrink-0",
-                            activeFilter === filter ? "opacity-100" : "opacity-0",
-                          )}
-                        />
-                        {FILTER_LABELS[filter]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 <Button
                   className="gradient-primary hidden gap-2 md:flex"
                   onClick={() => setShowNewPatient(true)}
@@ -503,19 +500,54 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
               </div>
             </div>
 
-            {/* Search */}
-            {showSearch && (
-              <div className="relative">
+            <div className="flex gap-2">
+              {/* Search */}
+              <div className="relative flex-1">
                 <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={searchInputRef}
                   placeholder="Buscar por nome"
-                  className="h-11 rounded-full bg-white pl-10"
+                  className="rounded-full bg-white pl-10"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                 />
               </div>
-            )}
+              <div ref={filterRef} className="relative">
+                <Button
+                  size="icon"
+                  variant={activeFilter !== "all" ? "secondary" : "outline"}
+                  onClick={handleFilterToggle}
+                >
+                  <ListFilter />
+                </Button>
+                <div
+                  className={cn(
+                    "absolute top-full right-0 z-10 mt-2 flex flex-col gap-1.5 rounded-xl border bg-background p-2 shadow-md transition-opacity duration-200",
+                    showFilters ? "opacity-100" : "pointer-events-none opacity-0",
+                  )}
+                >
+                  {(Object.keys(FILTER_LABELS) as FilterType[]).map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => handleFilterChange(filter)}
+                      className={cn(
+                        "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                        activeFilter === filter && "font-medium text-primary",
+                      )}
+                    >
+                      <Check
+                        className={cn(
+                          "size-4 shrink-0",
+                          activeFilter === filter ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      {FILTER_LABELS[filter]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Patient List */}
             <Card>

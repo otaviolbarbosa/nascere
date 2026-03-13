@@ -19,6 +19,7 @@ export function isPatient(profile: UserProfile): boolean {
 }
 
 /** Returns true for managers and secretaries (enterprise staff). */
-export function isStaff(profile: UserProfile): boolean {
+export function isStaff(profile?: UserProfile): boolean {
+  if (!profile) return false;
   return isManager(profile) || isSecretary(profile);
 }

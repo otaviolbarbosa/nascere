@@ -1,6 +1,5 @@
 import { updatePatientSchema } from "@/lib/validations/patient";
 import { createServerSupabaseClient } from "@nascere/supabase/server";
-import type { TablesUpdate } from "@nascere/supabase/types";
 import { NextResponse } from "next/server";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -55,24 +54,32 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
-    const updateData: TablesUpdate<"patients"> = {
-      name: validation.data.name,
-      email: validation.data.email,
-      phone: validation.data.phone,
-      due_date: validation.data.due_date,
-      address: validation.data.address,
-      observations: validation.data.observations,
-    };
-
     const { data: patient, error } = await supabase
       .from("patients")
-      .update(updateData)
+      .update({
+        name: validation.data.name,
+        email: validation.data.email,
+        phone: validation.data.phone,
+        address: validation.data.address,
+      })
       .eq("id", id)
       .select()
       .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Update pregnancy fields if provided
+    if (validation.data.due_date || validation.data.observations !== undefined) {
+      const pregnancyUpdate: { due_date?: string; observations?: string } = {};
+      if (validation.data.due_date) pregnancyUpdate.due_date = validation.data.due_date;
+      if (validation.data.observations !== undefined) pregnancyUpdate.observations = validation.data.observations;
+
+      await supabase
+        .from("pregnancies")
+        .update(pregnancyUpdate)
+        .eq("patient_id", id);
     }
 
     return NextResponse.json({ patient });

@@ -1,5 +1,6 @@
 "use client";
 import { addAppointmentAction } from "@/actions/add-appointment-action";
+import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,15 +28,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 type Patient = Tables<"patients">;
 
+type Professional = { id: string; name: string | null };
+
 type NewAppointmentModalProps = {
   patientId?: string;
   patients: Patient[];
+  professionals?: Professional[];
+  isStaff?: boolean;
   showModal: boolean;
   setShowModal: (open: boolean) => void;
   onSuccess?: VoidFunction;
@@ -43,10 +48,24 @@ type NewAppointmentModalProps = {
 export default function NewAppointmentModal({
   patientId,
   patients,
+  professionals = [],
+  isStaff = false,
   showModal,
   setShowModal,
   onSuccess,
 }: NewAppointmentModalProps) {
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | undefined>();
+
+  const {
+    execute: fetchPatientsByProfessional,
+    result: patientsByProfessionalResult,
+    isPending: isLoadingPatients,
+  } = useAction(getPatientsByProfessionalAction, {
+    onError: ({ error }) => {
+      toast.error(error.serverError ?? "Erro ao carregar pacientes");
+    },
+  });
+
   const { execute, status } = useAction(addAppointmentAction, {
     onSuccess: () => {
       toast.success("Agendamento criado com sucesso!");
@@ -77,6 +96,9 @@ export default function NewAppointmentModal({
     execute(data);
   }
 
+  const staffPatients = patientsByProfessionalResult.data?.patients ?? [];
+  const patientList = isStaff && selectedProfessionalId ? staffPatients : patients;
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     form.reset({
@@ -99,6 +121,40 @@ export default function NewAppointmentModal({
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {isStaff && professionals.length > 0 && (
+            <FormField
+              control={form.control}
+              name="professional_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Profissional</FormLabel>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedProfessionalId(value);
+                      form.setValue("patient_id", "");
+                      fetchPatientsByProfessional({ professionalId: value });
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o profissional" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {professionals.map((prof) => (
+                        <SelectItem key={prof.id} value={prof.id}>
+                          {prof.name ?? prof.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           {!patientId && (
             <FormField
               control={form.control}
@@ -106,14 +162,26 @@ export default function NewAppointmentModal({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Paciente</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isStaff && (!selectedProfessionalId || isLoadingPatients)}
+                  >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a paciente" />
+                        <SelectValue
+                          placeholder={
+                            isLoadingPatients
+                              ? "Carregando pacientes..."
+                              : isStaff && !selectedProfessionalId
+                                ? "Selecione o profissional primeiro"
+                                : "Selecione a paciente"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {patients.map((patient) => (
+                      {patientList.map((patient) => (
                         <SelectItem key={patient.id} value={patient.id}>
                           {patient.name}
                         </SelectItem>

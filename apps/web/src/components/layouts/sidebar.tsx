@@ -4,24 +4,47 @@ import Avatar from "@/components/shared/avatar";
 import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
-import { Bell, Calendar, DollarSign, Home, LogOut, Mail, Settings, Users } from "lucide-react";
+import { Calendar, DollarSign, Home, LogOut, Mail, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 
-const navigation = [
+// const navigationTest = [
+//   { name: "Home", href: "/home", icon: Home },
+//   { name: "Gestantes", href: "/patients", icon: Users },
+//   { name: "Agenda", href: "/appointments", icon: Calendar },
+//   { name: "Financeiro", href: "/billing", icon: DollarSign },
+//   { name: "Convites", href: "/invites", icon: Mail },
+//   { name: "Notificações", href: "/notifications", icon: Bell },
+//   { name: "Configurações", href: "/settings", icon: Settings },
+// ];
+const navigationProfessionals = [
   { name: "Home", href: "/home", icon: Home },
   { name: "Gestantes", href: "/patients", icon: Users },
   { name: "Agenda", href: "/appointments", icon: Calendar },
   { name: "Financeiro", href: "/billing", icon: DollarSign },
   { name: "Convites", href: "/invites", icon: Mail },
-  { name: "Notificações", href: "/notifications", icon: Bell },
-  { name: "Configurações", href: "/settings", icon: Settings },
+];
+
+const navigationStaff = [
+  { name: "Home", href: "/home", icon: Home },
+  { name: "Gestantes", href: "/patients", icon: Users },
+  { name: "Agenda", href: "/appointments", icon: Calendar },
+  { name: "Financeiro", href: "/billing", icon: DollarSign },
+  { name: "Convites", href: "/invites", icon: Mail },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { signOut, profile } = useAuth();
+
+  // const navigation = useMemo(() => navigationTest, []);
+  const navigation = useMemo(
+    () => (isStaff(profile) ? navigationStaff : navigationProfessionals),
+    [profile],
+  );
 
   if (pathname === "/onboarding") {
     return null;

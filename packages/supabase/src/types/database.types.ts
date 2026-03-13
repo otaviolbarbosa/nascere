@@ -583,51 +583,36 @@ export type Database = {
       patients: {
         Row: {
           address: string | null
-          born_at: string | null
           created_at: string | null
           created_by: string
           date_of_birth: string | null
-          due_date: string
-          dum: string | null
           email: string | null
-          has_finished: boolean
           id: string
           name: string
-          observations: string | null
           phone: string
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           address?: string | null
-          born_at?: string | null
           created_at?: string | null
           created_by: string
           date_of_birth?: string | null
-          due_date: string
-          dum?: string | null
           email?: string | null
-          has_finished?: boolean
           id?: string
           name: string
-          observations?: string | null
           phone: string
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string | null
-          born_at?: string | null
           created_at?: string | null
           created_by?: string
           date_of_birth?: string | null
-          due_date?: string
-          dum?: string | null
           email?: string | null
-          has_finished?: boolean
           id?: string
           name?: string
-          observations?: string | null
           phone?: string
           updated_at?: string | null
           user_id?: string | null
@@ -645,6 +630,50 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pregnancies: {
+        Row: {
+          born_at: string | null
+          created_at: string
+          due_date: string
+          dum: string | null
+          has_finished: boolean
+          id: string
+          observations: string | null
+          patient_id: string
+          updated_at: string
+        }
+        Insert: {
+          born_at?: string | null
+          created_at?: string
+          due_date: string
+          dum?: string | null
+          has_finished?: boolean
+          id?: string
+          observations?: string | null
+          patient_id: string
+          updated_at?: string
+        }
+        Update: {
+          born_at?: string | null
+          created_at?: string
+          due_date?: string
+          dum?: string | null
+          has_finished?: boolean
+          id?: string
+          observations?: string | null
+          patient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pregnancies_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -937,6 +966,7 @@ export type Database = {
           id: string
           joined_at: string | null
           patient_id: string
+          pregnancy_id: string | null
           professional_id: string
           professional_type: Database["public"]["Enums"]["professional_type"]
         }
@@ -944,6 +974,7 @@ export type Database = {
           id?: string
           joined_at?: string | null
           patient_id: string
+          pregnancy_id?: string | null
           professional_id: string
           professional_type: Database["public"]["Enums"]["professional_type"]
         }
@@ -951,6 +982,7 @@ export type Database = {
           id?: string
           joined_at?: string | null
           patient_id?: string
+          pregnancy_id?: string | null
           professional_id?: string
           professional_type?: Database["public"]["Enums"]["professional_type"]
         }
@@ -960,6 +992,13 @@ export type Database = {
             columns: ["patient_id"]
             isOneToOne: false
             referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_pregnancy_id_fkey"
+            columns: ["pregnancy_id"]
+            isOneToOne: false
+            referencedRelation: "pregnancies"
             referencedColumns: ["id"]
           },
           {

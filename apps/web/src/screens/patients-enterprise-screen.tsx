@@ -3,6 +3,7 @@ import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { PatientCard } from "@/components/shared/patient-card";
+import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +18,9 @@ import {
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { cn } from "@/lib/utils";
 import NewPatientModal from "@/modals/new-patient-modal";
-import type { PatientFilter, TeamMember } from "@/types";
 import type { PatientWithPregnancyFields } from "@/services/patient";
+import type { EnterpriseProfessional } from "@/services/professional";
+import type { PatientFilter, TeamMember } from "@/types";
 import { Baby, Check, ListFilter, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,27 +37,32 @@ const FILTER_OPTIONS: { key: PatientFilter; label: string }[] = [
 
 const PATIENTS_PER_PAGE = 10;
 
-type PatientsScreenProps = {
+type PatientsEnterpriseScreenProps = {
   patients: PatientWithPregnancyFields[];
   totalCount: number;
   currentPage: number;
   initialFilter: PatientFilter;
   initialSearch: string;
+  professionals: EnterpriseProfessional[];
+  initialProfessionalId: string | null;
   teamMembersMap: Record<string, TeamMember[]>;
 };
 
-export default function PatientsScreen({
+export default function PatientsEnterpriseScreen({
   patients,
   totalCount,
   currentPage,
   initialFilter,
   initialSearch,
+  professionals,
+  initialProfessionalId,
   teamMembersMap,
-}: PatientsScreenProps) {
+}: PatientsEnterpriseScreenProps) {
   const router = useRouter();
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [activeFilter, setActiveFilter] = useState<PatientFilter>(initialFilter);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [professionalId, setProfessionalId] = useState<string | null>(initialProfessionalId);
   const [showFilters, setShowFilters] = useState(false);
   const [showSearch, setShowSearch] = useState(!!initialSearch);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -78,38 +85,48 @@ export default function PatientsScreen({
     setShowFilters((prev) => !prev);
   }, []);
 
-  const buildUrl = useCallback((filter: PatientFilter, search: string, page = 1) => {
-    const params = new URLSearchParams();
-    if (filter !== "all") params.set("filter", filter);
-    if (search) params.set("search", search);
-    if (page > 1) params.set("page", String(page));
-    const qs = params.toString();
-    return qs ? `/patients?${qs}` : "/patients";
-  }, []);
+  const buildUrl = useCallback(
+    (filter: PatientFilter, search: string, profId: string | null, page = 1) => {
+      const params = new URLSearchParams();
+      if (filter !== "all") params.set("filter", filter);
+      if (search) params.set("search", search);
+      if (profId) params.set("professional", profId);
+      if (page > 1) params.set("page", String(page));
+      const qs = params.toString();
+      return qs ? `/patients?${qs}` : "/patients";
+    },
+    [],
+  );
 
   const handleSearchToggle = useCallback(() => {
     setShowSearch((prev) => {
       if (prev) {
         setSearchQuery("");
-        router.push(buildUrl(activeFilter, ""));
+        router.push(buildUrl(activeFilter, "", professionalId));
       } else {
         setTimeout(() => searchInputRef.current?.focus(), 50);
       }
       return !prev;
     });
-  }, [activeFilter, buildUrl, router]);
+  }, [activeFilter, buildUrl, professionalId, router]);
 
   const handleFilterClick = (filter: PatientFilter) => {
     setActiveFilter(filter);
     setShowFilters(false);
-    router.push(buildUrl(filter, searchQuery));
+    router.push(buildUrl(filter, searchQuery, professionalId));
+  };
+
+  const handleProfessionalSelect = (id: string) => {
+    const newId = professionalId === id ? null : id;
+    setProfessionalId(newId);
+    router.push(buildUrl(activeFilter, searchQuery, newId));
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
-      router.push(buildUrl(activeFilter, value));
+      router.push(buildUrl(activeFilter, value, professionalId));
     }, 400);
   };
 
@@ -125,8 +142,21 @@ export default function PatientsScreen({
 
   return (
     <div>
-      <Header title="Minhas Gestantes" />
+      <Header title="Gestantes" />
       <div className="p-4 pt-0 md:p-6 md:pt-0">
+        {professionals.length > 0 && (
+          <div className="mb-4">
+            <ProfessionalsSelector
+              professionals={professionals}
+              selectedId={professionalId}
+              onSelect={handleProfessionalSelect}
+              getCountLabel={(prof) =>
+                prof.patient_count === 1 ? "1 gestante" : `${prof.patient_count} gestantes`
+              }
+            />
+          </div>
+        )}
+
         <PageHeader description="">
           <div className="flex flex-col-reverse items-end gap-4">
             {activeFilter !== "all" && (
@@ -226,7 +256,7 @@ export default function PatientsScreen({
             <EmptyState
               icon={Baby}
               title="Nenhuma paciente cadastrada"
-              description="Comece cadastrando sua primeira paciente para acompanhar a gestação."
+              description="Nenhuma gestante encontrada para os filtros selecionados."
             >
               <Button onClick={() => setShowNewPatientModal(true)}>
                 <Plus className="mr-2 size-4" />
@@ -271,7 +301,7 @@ export default function PatientsScreen({
                   {currentPage > 1 && (
                     <PaginationItem>
                       <PaginationPrevious
-                        href={buildUrl(activeFilter, searchQuery, currentPage - 1)}
+                        href={buildUrl(activeFilter, searchQuery, professionalId, currentPage - 1)}
                       />
                     </PaginationItem>
                   )}
@@ -295,7 +325,7 @@ export default function PatientsScreen({
                       items.push(
                         <PaginationItem key={page}>
                           <PaginationLink
-                            href={buildUrl(activeFilter, searchQuery, page)}
+                            href={buildUrl(activeFilter, searchQuery, professionalId, page)}
                             isActive={page === currentPage}
                           >
                             {page}
@@ -306,7 +336,9 @@ export default function PatientsScreen({
                     })}
                   {currentPage < totalPages && (
                     <PaginationItem>
-                      <PaginationNext href={buildUrl(activeFilter, searchQuery, currentPage + 1)} />
+                      <PaginationNext
+                        href={buildUrl(activeFilter, searchQuery, professionalId, currentPage + 1)}
+                      />
                     </PaginationItem>
                   )}
                 </PaginationContent>
@@ -319,6 +351,7 @@ export default function PatientsScreen({
       <NewPatientModal
         showModal={showNewPatientModal}
         setShowModal={setShowNewPatientModal}
+        professionals={professionals}
         onSuccess={() => router.refresh()}
       />
     </div>

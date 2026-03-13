@@ -19,7 +19,11 @@ import InfoItem from "./info-item";
 import { useState } from "react";
 
 type PatientInfoProps = {
-  patient: Tables<"patients">;
+  patient: Tables<"patients"> & {
+    due_date?: string | null;
+    dum?: string | null;
+    observations?: string | null;
+  };
   onChange: () => Promise<void>;
 };
 
@@ -45,7 +49,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       name: patient?.name || "",
       email: patient?.email || "",
       phone: patient?.phone || "",
-      due_date: patient?.due_date || "",
+      due_date: patient?.due_date ?? "",
       dum: patient?.dum || "",
       address: patient?.address || "",
       observations: patient?.observations || "",
@@ -77,7 +81,7 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
       name: patient.name,
       email: patient.email ?? undefined,
       phone: patient.phone,
-      due_date: patient.due_date,
+      due_date: patient.due_date ?? undefined,
       dum: patient.dum || "",
       address: patient.address || "",
       observations: patient.observations || "",

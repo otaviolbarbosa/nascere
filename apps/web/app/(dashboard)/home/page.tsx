@@ -7,6 +7,8 @@ import { redirect } from "next/navigation";
 
 type Profile = Tables<"users">;
 
+export const revalidate = 600;
+
 export default async function Home() {
   const { profile } = await getProfile();
 
