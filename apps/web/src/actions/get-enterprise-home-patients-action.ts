@@ -1,6 +1,7 @@
 "use server";
 
 import { dayjs } from "@/lib/dayjs";
+import { getDppDateRange } from "@/lib/dpp-filter";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import { authActionClient } from "@/lib/safe-action";
 import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
@@ -78,11 +79,10 @@ export const getEnterpriseHomePatientsAction = authActionClient
     let rawPatients: RawPatient[] = [];
 
     if (dppMonth !== undefined && dppYear !== undefined) {
-      const startDate = dayjs().year(dppYear).month(dppMonth).startOf("month").format("YYYY-MM-DD");
-      const endDate = dayjs().year(dppYear).month(dppMonth).endOf("month").format("YYYY-MM-DD");
+      const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
       // Filter via pregnancies: get pregnancies in date range, then fetch patients
-      let pregnancyQuery = supabase
+      const pregnancyQuery = supabase
         .from("pregnancies")
         .select("patient_id, due_date, dum, has_finished, born_at, observations")
         .in("patient_id", allPatientIds)
@@ -93,18 +93,13 @@ export const getEnterpriseHomePatientsAction = authActionClient
       const { data: pregnancies, error: pregError } = await pregnancyQuery;
       if (pregError) throw new Error(pregError.message);
 
-      const pregnancyByPatient = new Map(
-        (pregnancies ?? []).map((p) => [p.patient_id, p]),
-      );
+      const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
       const filteredByDppIds = (pregnancies ?? []).map((p) => p.patient_id);
 
       if (filteredByDppIds.length === 0) {
         rawPatients = [];
       } else {
-        let patientsQuery = supabase
-          .from("patients")
-          .select("*")
-          .in("id", filteredByDppIds);
+        let patientsQuery = supabase.from("patients").select("*").in("id", filteredByDppIds);
 
         if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
         const { data, error } = await patientsQuery;
@@ -160,9 +155,7 @@ export const getEnterpriseHomePatientsAction = authActionClient
         weeks: gestationalAge?.weeks ?? 0,
         days: gestationalAge?.days ?? 0,
         remainingDays: Math.max(remainingDays, 0),
-        progress: gestationalAge
-          ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100)
-          : 0,
+        progress: gestationalAge ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100) : 0,
       };
 
       return {
