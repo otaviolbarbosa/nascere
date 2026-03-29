@@ -7,6 +7,7 @@ export type EnterpriseStaffMember = {
   name: string | null;
   email: string | null;
   user_type: "manager" | "secretary";
+  avatar_url?: string;
 };
 
 export type EnterpriseUsersResult = {
@@ -28,12 +29,12 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
   const [{ data: professionalsData }, { data: staffData }] = await Promise.all([
     supabaseAdmin
       .from("users")
-      .select("id, name, email, professional_type")
+      .select("id, name, email, phone, professional_type, avatar_url")
       .eq("enterprise_id", enterpriseId)
       .eq("user_type", "professional"),
     supabaseAdmin
       .from("users")
-      .select("id, name, email, user_type")
+      .select("id, name, email, phone, user_type, avatar_url")
       .eq("enterprise_id", enterpriseId)
       .in("user_type", ["manager", "secretary"]),
   ]);
@@ -62,6 +63,7 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
     id: p.id,
     name: p.name,
     email: p.email,
+    phone: p.phone,
     professional_type: p.professional_type,
     patient_count: patientCountByProfessional[p.id]?.size ?? 0,
   }));

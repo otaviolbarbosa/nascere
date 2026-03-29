@@ -8,7 +8,7 @@ export const addEnterpriseProfessionalAction = authActionClient
   .inputSchema(z.object({ email: z.string().email() }))
   .action(async ({ parsedInput: { email }, ctx: { user, profile } }) => {
     if (!profile?.enterprise_id) {
-      throw new Error("Você não está associado a nenhuma empresa.");
+      throw new Error("Você não está associado a nenhuma organização.");
     }
 
     const supabaseAdmin = await createServerSupabaseAdmin();
@@ -32,11 +32,11 @@ export const addEnterpriseProfessionalAction = authActionClient
     }
 
     if (targetUser.enterprise_id === profile.enterprise_id) {
-      throw new Error("Este profissional já pertence à sua empresa.");
+      throw new Error("Este profissional já pertence à sua organização.");
     }
 
     if (targetUser.enterprise_id) {
-      throw new Error("Este profissional já está vinculado a outra empresa.");
+      throw new Error("Este profissional já está vinculado a outra organização.");
     }
 
     const { error: updateError } = await supabaseAdmin
