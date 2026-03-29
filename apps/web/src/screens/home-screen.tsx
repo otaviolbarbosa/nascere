@@ -17,7 +17,7 @@ import NewAppointmentModal from "@/modals/new-appointment-modal";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { HomeAppointment } from "@/services/home";
 import { MONTH_LABELS_FULL } from "@/services/home";
-import type { PatientFilter, PatientWithGestationalInfo } from "@/types";
+import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getFirstName } from "@/utils";
 import type { Tables } from "@nascere/supabase";
 import { Baby, CalendarPlus, Eye, Search, UserPlusIcon, X } from "lucide-react";
@@ -280,9 +280,12 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
   const homeData = homeDataResult.data;
   const dppByMonth = homeData?.dppByMonth ?? [];
   const upcomingAppointments = homeData?.upcomingAppointments ?? [];
-  const patients = (patientsResult.data?.patients ??
-    homeData?.patients ??
-    []) as PatientWithGestationalInfo[];
+  const items: { patient: PatientWithGestationalInfo; teamMembers: TeamMember[] }[] =
+    patientsResult.data?.items ??
+    (homeData?.patients ?? []).map((p) => ({
+      patient: p as PatientWithGestationalInfo,
+      teamMembers: [],
+    }));
   const allPatients = allPatientsResult.data?.patients ?? [];
 
   const handleFilterChange = (filter: FilterType) => {
@@ -455,16 +458,16 @@ export default function HomeScreen({ profile }: HomeScreenProps) {
                     <PatientCardSkeleton />
                     <PatientCardSkeleton />
                   </>
-                ) : patients.length === 0 ? (
+                ) : items.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-12 text-center">
                     <Baby className="h-10 w-10 text-muted-foreground/50" />
                     <p className="text-muted-foreground text-sm">Nenhuma gestante encontrada</p>
                   </div>
                 ) : (
                   <div className="divider-y-1">
-                    {patients.map((patient) => (
+                    {items.map(({ patient, teamMembers }) => (
                       <Link key={patient.id} href={`/patients/${patient.id}`}>
-                        <PatientCard patient={patient} />
+                        <PatientCard patient={patient} teamMembers={teamMembers} />
                       </Link>
                     ))}
                   </div>

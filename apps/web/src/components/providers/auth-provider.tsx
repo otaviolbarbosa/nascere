@@ -1,5 +1,6 @@
 "use client";
 
+import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
 import { supabase } from "@nascere/supabase";
 import type { Tables } from "@nascere/supabase/types";
@@ -99,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    await invalidateUserCacheAction({});
     const { error } = await supabase.auth.signOut();
     if (!error) {
       // Hard navigation forces the server to re-read the session from scratch,
