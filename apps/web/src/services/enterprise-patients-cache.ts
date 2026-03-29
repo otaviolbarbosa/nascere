@@ -5,6 +5,14 @@ import type { PatientFilter, PatientWithGestationalInfo, TeamMember } from "@/ty
 import { createServerSupabaseAdmin } from "@nascere/supabase/server";
 import { unstable_cache } from "next/cache";
 
+const TEAM_MEMBERS_SELECT =
+  "patient_id, id, professional_id, professional_type, joined_at, is_backup, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)";
+
+type HomePatientItem = {
+  patient: PatientWithGestationalInfo;
+  teamMembers: TeamMember[];
+};
+
 type RawPatient = {
   id: string;
   name: string;
@@ -38,26 +46,29 @@ type RawPatient = {
   family_history_others?: string | null;
 };
 
-export type EnterprisePatientItem = {
-  patient: PatientWithGestationalInfo;
-  teamMembers: TeamMember[];
+type FetchParams = {
+  enterpriseId: string;
+  professionalId?: string;
+  filter: PatientFilter;
+  search: string;
+  dppMonth?: number;
+  dppYear?: number;
 };
 
-async function fetchEnterprisePatients(
-  enterpriseId: string,
-  filter: string,
-  search: string,
-  professionalId: string,
-  dppMonth: string,
-  dppYear: string,
-): Promise<EnterprisePatientItem[]> {
+async function fetchEnterpriseHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
+  const { enterpriseId, professionalId, filter, search, dppMonth, dppYear } = params;
   const supabase = await createServerSupabaseAdmin();
-  const today = dayjs();
 
-  let teamMembersQuery = supabase.from("team_members").select("patient_id");
+  // Step 1: Busca team_members com dados completos — uma única query que serve tanto para
+  // derivar os patient IDs quanto para montar o resultado final (elimina a segunda query)
+  let allTeamMembers: { patient_id: string; [key: string]: unknown }[];
 
   if (professionalId) {
-    teamMembersQuery = teamMembersQuery.eq("professional_id", professionalId);
+    const { data } = await supabase
+      .from("team_members")
+      .select(TEAM_MEMBERS_SELECT)
+      .eq("professional_id", professionalId);
+    allTeamMembers = (data ?? []) as typeof allTeamMembers;
   } else {
     const { data: professionals } = await supabase
       .from("users")
@@ -65,30 +76,26 @@ async function fetchEnterprisePatients(
       .eq("enterprise_id", enterpriseId)
       .eq("user_type", "professional");
 
-    const professionalIds = professionals?.map((p) => p.id) ?? [];
-    if (professionalIds.length === 0) {
-      return [];
-    }
-    teamMembersQuery = teamMembersQuery.in("professional_id", professionalIds);
+    const professionalIds = (professionals ?? []).map((p) => p.id);
+    if (professionalIds.length === 0) return [];
+
+    const { data } = await supabase
+      .from("team_members")
+      .select(TEAM_MEMBERS_SELECT)
+      .in("professional_id", professionalIds);
+    allTeamMembers = (data ?? []) as typeof allTeamMembers;
   }
 
-  const { data: patientIdRows } = await teamMembersQuery;
+  const allPatientIds = [...new Set(allTeamMembers.map((tm) => tm.patient_id))];
+  if (allPatientIds.length === 0) return [];
 
-  const allPatientIds = [...new Set(patientIdRows?.map((tm) => tm.patient_id) ?? [])];
+  // Step 2: Busca pacientes filtrados, com LIMIT 20 aplicado no banco
+  let rawPatients: RawPatient[];
 
-  if (allPatientIds.length === 0) {
-    return [];
-  }
+  if (dppMonth !== undefined && dppYear !== undefined) {
+    const { startDate, endDate } = getDppDateRange(dppMonth, dppYear);
 
-  let rawPatients: RawPatient[] = [];
-
-  const dppMonthNum = dppMonth !== "" ? Number(dppMonth) : undefined;
-  const dppYearNum = dppYear !== "" ? Number(dppYear) : undefined;
-
-  if (dppMonthNum !== undefined && dppYearNum !== undefined) {
-    const { startDate, endDate } = getDppDateRange(dppMonthNum, dppYearNum);
-
-    const pregnancyQuery = supabase
+    const { data: pregnancies, error: pregError } = await supabase
       .from("pregnancies")
       .select("patient_id, due_date, dum, has_finished, born_at, observations")
       .in("patient_id", allPatientIds)
@@ -96,60 +103,61 @@ async function fetchEnterprisePatients(
       .lte("due_date", endDate)
       .order("due_date", { ascending: true });
 
-    const { data: pregnancies, error: pregError } = await pregnancyQuery;
     if (pregError) throw new Error(pregError.message);
 
-    const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
     const filteredByDppIds = (pregnancies ?? []).map((p) => p.patient_id);
+    if (filteredByDppIds.length === 0) return [];
 
-    if (filteredByDppIds.length === 0) {
-      rawPatients = [];
-    } else {
-      let patientsQuery = supabase.from("patients").select("*").in("id", filteredByDppIds);
+    const pregnancyByPatient = new Map((pregnancies ?? []).map((p) => [p.patient_id, p]));
 
-      if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
-      const { data, error } = await patientsQuery;
-      if (error) throw new Error(error.message);
+    let patientsQuery = supabase.from("patients").select("*").in("id", filteredByDppIds).limit(20);
 
-      rawPatients = (data ?? []).map((p) => ({
-        ...p,
-        due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
-        dum: pregnancyByPatient.get(p.id)?.dum ?? null,
-        has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
-        born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
-        observations: pregnancyByPatient.get(p.id)?.observations ?? null,
-      }));
-    }
+    if (search) patientsQuery = patientsQuery.ilike("name", `%${search}%`);
+
+    const { data, error } = await patientsQuery;
+    if (error) throw new Error(error.message);
+
+    rawPatients = (data ?? []).map((p) => ({
+      ...p,
+      due_date: pregnancyByPatient.get(p.id)?.due_date ?? null,
+      dum: pregnancyByPatient.get(p.id)?.dum ?? null,
+      has_finished: pregnancyByPatient.get(p.id)?.has_finished ?? false,
+      born_at: pregnancyByPatient.get(p.id)?.born_at ?? null,
+      observations: pregnancyByPatient.get(p.id)?.observations ?? null,
+    }));
   } else {
-    const { data, error } = await supabase.rpc("get_filtered_patients", {
-      patient_ids: allPatientIds,
-      filter_type: filter as PatientFilter,
-      search_query: search,
-    });
+    const { data, error } = await supabase
+      .rpc("get_filtered_patients", {
+        patient_ids: allPatientIds,
+        filter_type: filter,
+        search_query: search,
+      })
+      .limit(20);
+
     if (error) throw new Error(error.message);
     rawPatients = (data ?? []) as unknown as RawPatient[];
   }
 
-  const filteredPatientIds = rawPatients.map((p) => p.id);
+  if (rawPatients.length === 0) return [];
 
-  const { data: teamMembersData } = await supabase
-    .from("team_members")
-    .select(
-      "patient_id, id, professional_id, professional_type, joined_at, professional:users!team_members_professional_id_fkey(id, name, email, avatar_url)",
-    )
-    .in("patient_id", filteredPatientIds);
-
+  // Step 3: Monta mapa de team_members usando os dados já buscados no step 1
+  // (sem query adicional ao banco)
+  const pagedPatientIds = new Set(rawPatients.map((p) => p.id));
   const teamMembersByPatient = new Map<string, TeamMember[]>();
-  for (const tm of teamMembersData ?? []) {
+
+  for (const tm of allTeamMembers) {
+    if (!pagedPatientIds.has(tm.patient_id)) continue;
     const list = teamMembersByPatient.get(tm.patient_id) ?? [];
     list.push(tm as unknown as TeamMember);
     teamMembersByPatient.set(tm.patient_id, list);
   }
 
-  return rawPatients.slice(0, 20).map((patient) => {
+  // Step 4: Calcula dados gestacionais e monta resultado
+  const today = dayjs();
+
+  return rawPatients.map((patient) => {
     const gestationalAge = calculateGestationalAge(patient.dum ?? null);
     const dueDate = dayjs(patient.due_date);
-    const remainingDays = dueDate.diff(today, "day");
 
     const patientWithInfo = {
       ...patient,
@@ -160,7 +168,7 @@ async function fetchEnterprisePatients(
       observations: patient.observations ?? null,
       weeks: gestationalAge?.weeks ?? 0,
       days: gestationalAge?.days ?? 0,
-      remainingDays: Math.max(remainingDays, 0),
+      remainingDays: Math.max(dueDate.diff(today, "day"), 0),
       progress: gestationalAge ? Math.min(Math.round((gestationalAge.weeks / 40) * 100), 100) : 0,
       allergies: patient.allergies ?? null,
       blood_type: patient.blood_type ?? null,
@@ -180,36 +188,21 @@ async function fetchEnterprisePatients(
   });
 }
 
-export function getCachedEnterprisePatients(
-  enterpriseId: string,
-  filter: string,
-  search: string,
-  professionalId?: string,
-  dppMonth?: number,
-  dppYear?: number,
-): Promise<EnterprisePatientItem[]> {
+export function getCachedEnterpriseHomePatients(params: FetchParams): Promise<HomePatientItem[]> {
   return unstable_cache(
-    () =>
-      fetchEnterprisePatients(
-        enterpriseId,
-        filter,
-        search,
-        professionalId ?? "",
-        String(dppMonth ?? ""),
-        String(dppYear ?? ""),
-      ),
+    () => fetchEnterpriseHomePatients(params),
     [
-      "enterprise-patients",
-      enterpriseId,
-      filter,
-      search,
-      professionalId ?? "",
-      String(dppMonth ?? ""),
-      String(dppYear ?? ""),
+      "enterprise-home-patients",
+      params.enterpriseId,
+      params.professionalId ?? "all",
+      params.filter,
+      params.search,
+      String(params.dppMonth ?? ""),
+      String(params.dppYear ?? ""),
     ],
     {
-      tags: [`enterprise-patients-${enterpriseId}`],
-      revalidate: 3600,
+      tags: [`enterprise-patients-${params.enterpriseId}`],
+      revalidate: 300,
     },
   )();
 }

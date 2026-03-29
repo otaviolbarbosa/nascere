@@ -2,6 +2,7 @@
 
 import { authActionClient } from "@/lib/safe-action";
 import { getCachedHomePatients } from "@/services/home-patients-cache";
+import type { PatientFilter } from "@/types";
 import { z } from "zod";
 
 const schema = z.object({
@@ -15,16 +16,14 @@ const schema = z.object({
 export const getHomePatientsAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { user } }) => {
-    const { filter, search, showFinished, dppMonth, dppYear } = parsedInput;
+    const items = await getCachedHomePatients({
+      userId: user.id,
+      filter: parsedInput.filter as PatientFilter,
+      showFinished: parsedInput.showFinished,
+      search: parsedInput.search,
+      dppMonth: parsedInput.dppMonth,
+      dppYear: parsedInput.dppYear,
+    });
 
-    const patients = await getCachedHomePatients(
-      user.id,
-      filter,
-      search,
-      showFinished,
-      dppMonth,
-      dppYear,
-    );
-
-    return { patients };
+    return { items };
   });

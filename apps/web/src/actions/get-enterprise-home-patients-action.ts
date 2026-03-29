@@ -1,8 +1,7 @@
 "use server";
-
 import { authActionClient } from "@/lib/safe-action";
-import { getCachedEnterprisePatients } from "@/services/enterprise-patients-cache";
-import type { PatientWithGestationalInfo, TeamMember } from "@/types";
+import { getCachedEnterpriseHomePatients } from "@/services/enterprise-patients-cache";
+import type { PatientFilter } from "@/types";
 import { z } from "zod";
 
 const schema = z.object({
@@ -16,20 +15,18 @@ const schema = z.object({
 export const getEnterpriseHomePatientsAction = authActionClient
   .inputSchema(schema)
   .action(async ({ parsedInput, ctx: { profile } }) => {
-    const { filter, search, professionalId, dppMonth, dppYear } = parsedInput;
-
     if (!profile.enterprise_id) {
-      return { items: [] as { patient: PatientWithGestationalInfo; teamMembers: TeamMember[] }[] };
+      return { items: [] };
     }
 
-    const items = await getCachedEnterprisePatients(
-      profile.enterprise_id,
-      filter,
-      search,
-      professionalId,
-      dppMonth,
-      dppYear,
-    );
+    const items = await getCachedEnterpriseHomePatients({
+      enterpriseId: profile.enterprise_id,
+      professionalId: parsedInput.professionalId,
+      filter: parsedInput.filter as PatientFilter,
+      search: parsedInput.search,
+      dppMonth: parsedInput.dppMonth,
+      dppYear: parsedInput.dppYear,
+    });
 
     return { items };
   });
