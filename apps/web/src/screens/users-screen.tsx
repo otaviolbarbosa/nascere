@@ -5,10 +5,9 @@ import { removeEnterpriseProfessionalAction } from "@/actions/remove-enterprise-
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { ProfessionalCard } from "@/components/shared/professional-card";
+import { StaffCard } from "@/components/shared/staff-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -22,32 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import type { EnterpriseProfessional } from "@/services/professional";
-import { BriefcaseMedical, Stethoscope, UserMinus, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { BriefcaseMedical, Stethoscope, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-
-const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
-  obstetra: "Obstetra",
-  enfermeiro: "Enfermeira",
-  doula: "Doula",
-};
-
-const STAFF_TYPE_LABELS: Record<string, string> = {
-  manager: "Gestor",
-  secretary: "Secretária",
-};
-
-function getInitials(name: string | null): string {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 type UsersScreenProps = {
   professionals: EnterpriseProfessional[];
@@ -97,7 +74,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
         toast.error(result.serverError);
         return;
       }
-      toast.success(`${professionalToRemove.name ?? "Profissional"} removido da empresa.`);
+      toast.success(`${professionalToRemove.name ?? "Profissional"} removido da organização.`);
       setProfessionalToRemove(null);
       router.refresh();
     } catch {
@@ -166,48 +143,11 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {professionals.map((professional) => (
-                  <Card key={professional.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-12 w-12 shrink-0">
-                          <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                            {getInitials(professional.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{professional.name ?? "—"}</p>
-                          <p className="truncate text-muted-foreground text-xs">
-                            {professional.email ?? "—"}
-                          </p>
-                          {professional.professional_type && (
-                            <Badge variant="secondary" className="mt-1 text-xs">
-                              {PROFESSIONAL_TYPE_LABELS[professional.professional_type] ??
-                                professional.professional_type}
-                            </Badge>
-                          )}
-                          <Link
-                            href={`/patients?professional=${professional.id}`}
-                            className="mt-2 flex items-center gap-1 text-muted-foreground text-sm hover:text-primary hover:underline"
-                          >
-                            <Stethoscope className="size-3.5" />
-                            <span>
-                              {professional.patient_count}{" "}
-                              {professional.patient_count === 1 ? "gestante" : "gestantes"}
-                            </span>
-                          </Link>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-3 w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => setProfessionalToRemove(professional)}
-                      >
-                        <UserMinus className="size-3.5" />
-                        Remover da empresa
-                      </Button>
-                    </CardContent>
-                  </Card>
+                  <ProfessionalCard
+                    key={professional.id}
+                    professional={professional}
+                    onRemove={setProfessionalToRemove}
+                  />
                 ))}
               </div>
             )}
@@ -219,31 +159,12 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
               <EmptyState
                 icon={BriefcaseMedical}
                 title="Nenhum gestor cadastrado"
-                description="Os gestores e secretárias da empresa aparecerão aqui."
+                description="Gestoras e secretárias da organização aparecerão aqui."
               />
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {staff.map((member) => (
-                  <Card key={member.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 shrink-0">
-                          <AvatarFallback className="bg-primary/10 font-semibold text-primary">
-                            {getInitials(member.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{member.name ?? "—"}</p>
-                          <p className="truncate text-muted-foreground text-xs">
-                            {member.email ?? "—"}
-                          </p>
-                          <Badge variant="outline" className="mt-1 text-xs">
-                            {STAFF_TYPE_LABELS[member.user_type] ?? member.user_type}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StaffCard key={member.id} member={member} />
                 ))}
               </div>
             )}
@@ -258,7 +179,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
             <DialogTitle>Adicionar Profissional</DialogTitle>
             <DialogDescription>
               Informe o e-mail de um profissional já cadastrado na plataforma para associá-lo à sua
-              empresa.
+              organização.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -302,7 +223,7 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
               <span className="font-medium text-foreground">
                 {professionalToRemove?.name ?? "este profissional"}
               </span>{" "}
-              da empresa? Ele perderá o acesso às funcionalidades da organização.
+              da organização? Ele perderá o acesso às funcionalidades da organização.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

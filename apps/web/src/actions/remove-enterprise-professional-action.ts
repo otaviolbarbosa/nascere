@@ -8,7 +8,7 @@ export const removeEnterpriseProfessionalAction = authActionClient
   .inputSchema(z.object({ professionalId: z.string().uuid() }))
   .action(async ({ parsedInput: { professionalId }, ctx: { profile } }) => {
     if (!profile?.enterprise_id) {
-      throw new Error("Você não está associado a nenhuma empresa.");
+      throw new Error("Você não está associado a nenhuma organização.");
     }
 
     const supabaseAdmin = await createServerSupabaseAdmin();
@@ -24,11 +24,11 @@ export const removeEnterpriseProfessionalAction = authActionClient
     }
 
     if (targetUser.enterprise_id !== profile.enterprise_id) {
-      throw new Error("Este profissional não pertence à sua empresa.");
+      throw new Error("Este profissional não pertence à sua organização.");
     }
 
     if (targetUser.user_type !== "professional") {
-      throw new Error("Apenas profissionais podem ser removidos pela empresa.");
+      throw new Error("Apenas profissionais podem ser removidos pela organização.");
     }
 
     const { error: updateError } = await supabaseAdmin
