@@ -43,7 +43,7 @@ const premiumFeatures = [
 ];
 
 const enterpriseFeatures = [
-  "Perfis de gestor e secretário",
+  "Perfis de gestora e secretária",
   "Gerenciamento de múltiplas especialidades",
   "Gerenciamento de múltiplas agendas",
   "Relatórios qualitativos avançados",

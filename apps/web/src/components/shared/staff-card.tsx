@@ -5,7 +5,7 @@ import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import { getInitials } from "@/utils";
 
 const STAFF_TYPE_LABELS: Record<string, string> = {
-  manager: "Gestor",
+  manager: "Gestora",
   secretary: "Secretária",
 };
 

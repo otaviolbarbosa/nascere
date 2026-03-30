@@ -2,6 +2,7 @@ import { dayjs } from "@/lib/dayjs";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getInitials } from "@/utils";
 import { Flame } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import TeamMembersAvatars from "./team-members-avatars";
 
 export function PatientCard({
@@ -30,9 +31,36 @@ export function PatientCard({
 
   return (
     <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground shadow">
-        {getInitials(patient.name)}
-        <div className={`absolute right-1 bottom-1 h-2 w-2 shrink-0 rounded-full ${statusColor}`} />
+      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow">
+        <svg className="-rotate-90 absolute inset-0" viewBox="0 0 48 48" fill="none">
+          <title>Progress Bar</title>
+          <circle
+            cx="24"
+            cy="24"
+            r="23"
+            strokeWidth="2"
+            stroke="hsl(var(--primary))"
+            strokeLinecap="round"
+            strokeDasharray={2 * Math.PI * 22}
+            strokeDashoffset={2 * Math.PI * 22 * (1 - patient.progress / 100)}
+          />
+        </svg>
+        <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
+          {/* {getInitials(patient.name)} */}
+          <Avatar className="h-11 w-11 bg-white shadow-md ring-1 ring-primary/25">
+            <AvatarImage
+              src={undefined}
+              alt={patient.name || ""}
+              className="rounded-full object-cover"
+            />
+            <AvatarFallback className="bg-muted font-semibold text-lg text-primary">
+              {getInitials(patient.name ?? "")}
+            </AvatarFallback>
+          </Avatar>
+          <div
+            className={`absolute right-0.5 bottom-0.5 h-2 w-2 shrink-0 rounded-full ${statusColor}`}
+          />
+        </div>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex justify-between">
@@ -56,14 +84,6 @@ export function PatientCard({
               <TeamMembersAvatars teamMembers={mainTeamMembers} patientId={patient.id} />
             </div>
           )}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="relative flex-1 overflow-hidden rounded-full border border-[#DEC9C8] bg-[url('/images/bg-pattern-2.svg')] bg-muted bg-repeat p-[1px] shadow">
-            <div
-              className="inset-y-0 left-0 h-2 rounded-full bg-primary"
-              style={{ width: `${patient.progress}%` }}
-            />
-          </div>
         </div>
       </div>
     </div>

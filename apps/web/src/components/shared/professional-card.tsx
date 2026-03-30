@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -12,8 +11,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { EnterpriseProfessional } from "@/services/professional";
 import { getInitials } from "@/utils";
-import { Mail, MoreHorizontal, Phone, Stethoscope, UserMinus } from "lucide-react";
+import {
+  ChevronRight,
+  Mail,
+  MoreHorizontal,
+  Phone,
+  Search,
+  Stethoscope,
+  UserMinus,
+} from "lucide-react";
 import Link from "next/link";
+import { Separator } from "../ui/separator";
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",
@@ -32,25 +40,20 @@ export function ProfessionalCard({ professional, onRemove }: ProfessionalCardPro
     : null;
 
   return (
-    <Card className="flex flex-col overflow-hidden">
+    <Card className="flex flex-col overflow-hidden border-primary/25">
       {/* Header */}
-      <div className="relative flex justify-between bg-muted/30 p-4">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-16 w-16 shadow-md ring-4 ring-background">
+      <div className="relative flex justify-end bg-muted/50 px-4 py-3">
+        <div className="absolute top-5 left-4 flex items-center gap-2">
+          <Avatar className="h-16 w-16 bg-white p-0.5 shadow-md ring-1 ring-primary/25">
             <AvatarImage
               src={professional.avatar_url || undefined}
               alt={professional.name || ""}
-              className="object-cover"
+              className="rounded-full object-cover"
             />
-            <AvatarFallback className="bg-primary/10 font-semibold text-lg text-primary">
+            <AvatarFallback className="bg-muted font-semibold text-lg text-primary">
               {getInitials(professional.name ?? "")}
             </AvatarFallback>
           </Avatar>
-          {/* Name & type */}
-          <div>
-            <p className="font-bold text-lg leading-tight">{professional.name ?? "—"}</p>
-            {typeLabel && <p className="mt-0.5 text-muted-foreground text-sm">{typeLabel}</p>}
-          </div>
         </div>
 
         <div className="flex justify-end">
@@ -59,12 +62,21 @@ export function ProfessionalCard({ professional, onRemove }: ProfessionalCardPro
               <Button
                 variant="outline"
                 size="icon"
-                className="h-9 w-9 rounded-xl bg-background shadow-sm"
+                className="h-8 w-8 rounded-xl bg-white shadow-sm"
               >
                 <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  return;
+                }}
+              >
+                <Search className="mr-2 size-4" />
+                Ver Perfil
+              </DropdownMenuItem>
+              <Separator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => onRemove(professional)}
@@ -78,38 +90,43 @@ export function ProfessionalCard({ professional, onRemove }: ProfessionalCardPro
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col justify-between gap-4 px-4 pt-3 pb-4">
+      <div className="flex flex-1 flex-col justify-between gap-4 px-4 pt-10 pb-4">
+        {/* Name & type */}
+        <div>
+          <p className="font-semibold leading-tight">{professional.name ?? "—"}</p>
+          {typeLabel && <p className="mt-0.5 text-muted-foreground text-xs">{typeLabel}</p>}
+        </div>
+
         {/* Contact rows */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <div className="flex shrink-0 items-center gap-1.5 text-muted-foreground text-sm">
               <Phone className="size-3.5" />
-              {/* <span>Telefone:</span> */}
             </div>
-            <span className="font-medium text-sm">{professional.phone ?? "—"}</span>
+            <span className="text-sm">{professional.phone ?? "—"}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex shrink-0 items-center gap-1.5 text-muted-foreground text-sm">
               <Mail className="size-3.5" />
-              {/* <span>Email:</span> */}
             </div>
-            <span className="truncate font-medium text-sm">{professional.email ?? "—"}</span>
+            <span className="truncate text-sm">{professional.email ?? "—"}</span>
           </div>
         </div>
 
         {/* Patients link */}
         <Link
           href={`/patients?professional=${professional.id}`}
-          className="flex items-center gap-2 rounded-xl bg-muted/30 px-3 py-2.5"
+          className="flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5"
         >
           <Stethoscope className="size-4 shrink-0 text-muted-foreground" />
-          <div className="flex-1 font-medium text-sm hover:text-primary hover:underline">
+          <div className="flex-1 font-medium text-sm hover:text-primary">
             {professional.patient_count}{" "}
             {professional.patient_count === 1 ? "gestante" : "gestantes"}
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <ChevronRight className="size-4 text-primary" />
+          {/* <Badge variant="secondary" className="text-xs">
             Ver
-          </Badge>
+          </Badge> */}
         </Link>
       </div>
     </Card>
