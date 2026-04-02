@@ -3,7 +3,7 @@ import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getInitials } from "@/utils";
 import { Flame } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
 import TeamMembersAvatars from "./team-members-avatars";
 
 export function PatientCard({

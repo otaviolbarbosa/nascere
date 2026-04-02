@@ -4,10 +4,10 @@ import { deleteLabExamAction } from "@/actions/delete-lab-exam-action";
 import { getPrenatalCardAction } from "@/actions/get-prenatal-card-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Separator } from "@repo/ui/separator";
+import { Skeleton } from "@repo/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import {
   AMNIOTIC_FLUID_INDEX_LABELS,

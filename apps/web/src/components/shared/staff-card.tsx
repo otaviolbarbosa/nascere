@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
+import { Badge } from "@repo/ui/badge";
+import { Card, CardContent } from "@repo/ui/card";
 import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import { getInitials } from "@/utils";
 

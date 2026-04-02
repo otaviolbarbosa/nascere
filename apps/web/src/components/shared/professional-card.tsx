@@ -1,14 +1,14 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
+import { Button } from "@repo/ui/button";
+import { Card } from "@repo/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@repo/ui/dropdown-menu";
 import type { EnterpriseProfessional } from "@/services/professional";
 import { getInitials } from "@/utils";
 import {
@@ -23,7 +23,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import Link from "next/link";
-import { Separator } from "../ui/separator";
+import { Separator } from "@repo/ui/separator";
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   obstetra: "Obstetra",

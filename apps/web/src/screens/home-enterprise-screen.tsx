@@ -5,11 +5,11 @@ import { getHomeEnterpriseDataAction } from "@/actions/get-home-enterprise-data-
 import { Header } from "@/components/layouts/header";
 import { PatientCard } from "@/components/shared/patient-card";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Card, CardContent } from "@repo/ui/card";
+import { Input } from "@repo/ui/input";
+import { Skeleton } from "@repo/ui/skeleton";
 import { dayjs } from "@/lib/dayjs";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";

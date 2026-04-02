@@ -1,8 +1,8 @@
 "use client";
 
 import { createStripeCheckoutSessionAction } from "@/actions/create-stripe-checkout-session-action";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@repo/ui/dialog";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { supabase } from "@nascere/supabase";

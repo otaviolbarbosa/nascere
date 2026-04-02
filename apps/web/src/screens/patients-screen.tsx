@@ -4,9 +4,9 @@ import { DppMonthCarousel } from "@/components/shared/dpp-month-carousel";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FilterDropdown } from "@/components/shared/filter-dropdown";
 import { PatientCard } from "@/components/shared/patient-card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Input } from "@repo/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -14,8 +14,8 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@repo/ui/pagination";
+import { Skeleton } from "@repo/ui/skeleton";
 import { PATIENTS_PER_PAGE } from "@/lib/constants";
 import { calculateGestationalAge } from "@/lib/gestational-age";
 import NewPatientModal from "@/modals/new-patient-modal";

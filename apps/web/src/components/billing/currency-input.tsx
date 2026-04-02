@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { Input } from "@repo/ui/input";
 import { type ChangeEvent, useCallback, useState } from "react";
 
 type CurrencyInputProps = {

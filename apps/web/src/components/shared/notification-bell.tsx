@@ -2,8 +2,8 @@
 
 import { getNotificationsAction } from "@/actions/get-notifications-action";
 import { markNotificationsReadAction } from "@/actions/mark-notifications-read-action";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@repo/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/popover";
 import { useNotificationsContext } from "@/components/providers/notifications-provider";
 import type { Notification } from "@/services/notification";
 import { Bell } from "lucide-react";

@@ -2,8 +2,8 @@
 
 import { updateProfileAction } from "@/actions/update-profile-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/avatar";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -11,9 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
+import { Separator } from "@repo/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase/types";

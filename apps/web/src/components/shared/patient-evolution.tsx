@@ -4,7 +4,7 @@ import { createEvolutionAction } from "@/actions/create-evolution-action";
 import { getPatientEvolutionsAction } from "@/actions/get-patient-evolutions-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -12,9 +12,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/form";
+import { Skeleton } from "@repo/ui/skeleton";
+import { Textarea } from "@repo/ui/textarea";
 import { dayjs } from "@/lib/dayjs";
 import { type CreateEvolutionInput, createEvolutionSchema } from "@/lib/validations/evolution";
 import { zodResolver } from "@hookform/resolvers/zod";

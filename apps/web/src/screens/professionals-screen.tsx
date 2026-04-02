@@ -3,18 +3,18 @@
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@repo/ui/avatar";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Card, CardContent } from "@repo/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/dialog";
+import { Input } from "@repo/ui/input";
 import NewPatientModal from "@/modals/new-patient-modal";
 import type { EnterpriseProfessional } from "@/services/professional";
 import { Copy, Plus, Stethoscope, UserPlus, Users } from "lucide-react";

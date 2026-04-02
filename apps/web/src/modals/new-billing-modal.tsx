@@ -4,7 +4,7 @@ import { addBillingAction } from "@/actions/add-billing-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
 import { ContentModal } from "@/components/shared/content-modal";
 import { MultiSelectDropdown } from "@/components/shared/multi-select-dropdown";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -12,16 +12,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/select";
+import { Textarea } from "@repo/ui/textarea";
 import { calculateInstallmentAmount, calculateInstallmentDates, formatCurrency } from "@/lib/billing/calculations";
 import { type CreateBillingInput, createBillingSchema } from "@/lib/validations/billing";
 import { zodResolver } from "@hookform/resolvers/zod";

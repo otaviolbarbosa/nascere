@@ -2,7 +2,7 @@
 import { addAppointmentAction } from "@/actions/add-appointment-action";
 import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -10,16 +10,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/select";
+import { Textarea } from "@repo/ui/textarea";
 import {
   type CreateAppointmentInput,
   createAppointmentSchema,

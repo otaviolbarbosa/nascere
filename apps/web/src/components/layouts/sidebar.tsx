@@ -2,7 +2,7 @@
 
 import Avatar from "@/components/shared/avatar";
 import { Logo } from "@/components/shared/logo";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { isStaff } from "@/lib/access-control";
 import { cn } from "@/lib/utils";

@@ -2,7 +2,7 @@
 
 import { upsertVaccineRecordAction } from "@/actions/upsert-vaccine-record-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -10,15 +10,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@repo/ui/select";
 import { VACCINE_LABELS } from "@/lib/prenatal-constants";
 import { type VaccineRecordInput, vaccineRecordSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";

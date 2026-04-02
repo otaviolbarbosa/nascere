@@ -5,7 +5,7 @@ import { getPatientBillingsAction } from "@/actions/get-patient-billings-action"
 import { BillingCard } from "@/components/billing/billing-card";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientBilling } from "@/components/shared/loading-state";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import NewBillingModal from "@/modals/new-billing-modal";
 import type { Tables } from "@nascere/supabase/types";

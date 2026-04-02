@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@repo/ui/card";
 import { formatCurrency } from "@/lib/billing/calculations";
 import type { LucideIcon } from "lucide-react";
 

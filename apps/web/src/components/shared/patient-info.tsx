@@ -3,7 +3,7 @@ import type { Tables } from "@nascere/supabase";
 import dayjs from "dayjs";
 import { Pencil } from "lucide-react";
 import { useState } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@repo/ui/button";
 import InfoItem from "./info-item";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
 

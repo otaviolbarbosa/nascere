@@ -1,9 +1,9 @@
 "use client";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Card, CardContent } from "@repo/ui/card";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithPatient } from "@/services/appointment";

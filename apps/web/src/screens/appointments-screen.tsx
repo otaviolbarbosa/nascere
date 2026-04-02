@@ -8,7 +8,7 @@ import { Header } from "@/components/layouts/header";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
 import NewAppointmentModal from "@/modals/new-appointment-modal";

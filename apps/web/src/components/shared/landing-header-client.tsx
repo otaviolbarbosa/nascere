@@ -1,7 +1,7 @@
 "use client";
 
 import { Logo } from "@/components/shared/logo";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Menu, X } from "lucide-react";
 import Link from "next/link";

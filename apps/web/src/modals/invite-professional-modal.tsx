@@ -5,9 +5,9 @@ import { inviteProfessionalDirectAction } from "@/actions/invite-professional-di
 import { searchUsersAction } from "@/actions/search-users-action";
 import { ContentModal } from "@/components/shared/content-modal";
 import CustomIcon from "@/components/shared/custom-icon";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@repo/ui/button";
+import { Input } from "@repo/ui/input";
+import { Label } from "@repo/ui/label";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import type { Tables } from "@nascere/supabase";

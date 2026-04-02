@@ -2,8 +2,8 @@
 
 import { upsertRiskFactorsAction } from "@/actions/upsert-risk-factors-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/button";
+import { Checkbox } from "@repo/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -11,10 +11,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
+import { Separator } from "@repo/ui/separator";
+import { Textarea } from "@repo/ui/textarea";
 import { RISK_GROUPS } from "@/lib/prenatal-constants";
 import { type RiskFactorsInput, riskFactorsSchema } from "@/lib/validations/prenatal";
 import { zodResolver } from "@hookform/resolvers/zod";

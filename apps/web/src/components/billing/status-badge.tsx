@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@repo/ui/badge";
 import { getStatusConfig } from "@/lib/billing/calculations";
 import type { Database } from "@nascere/supabase/types";
 

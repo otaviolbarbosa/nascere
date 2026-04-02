@@ -2,7 +2,7 @@
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { updatePatientAction } from "@/actions/update-patient-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -10,9 +10,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
+import { Textarea } from "@repo/ui/textarea";
 import { type UpdatePatientInput, updatePatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@nascere/supabase";
