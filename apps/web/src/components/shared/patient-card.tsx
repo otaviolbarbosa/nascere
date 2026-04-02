@@ -1,4 +1,5 @@
 import { dayjs } from "@/lib/dayjs";
+import { calculateGestationalAge } from "@/lib/gestational-age";
 import type { PatientWithGestationalInfo, TeamMember } from "@/types";
 import { getInitials } from "@/utils";
 import { Flame } from "lucide-react";
@@ -12,54 +13,39 @@ export function PatientCard({
   patient: PatientWithGestationalInfo;
   teamMembers?: TeamMember[];
 }) {
-  const formattedGestationalAge = (weeks: number, days: number) => {
-    let output = "";
-    output += `${weeks} semana${weeks === 1 ? "" : "s"}`;
-
-    if (days > 0) {
-      output += ` e ${days} dia${days === 1 ? "" : "s"}`;
-    }
-
-    return output;
-  };
-
   const mainTeamMembers = teamMembers?.filter((teamMember) => !teamMember.is_backup);
 
   const dppFormatted = dayjs(patient.due_date).format("DD/MM");
-  const statusColor =
-    patient.weeks >= 37 ? "bg-orange-400" : patient.weeks >= 28 ? "bg-blue-400" : "bg-green-400";
+  const statusColor = patient.weeks >= 37 ? "#be5237" : patient.weeks >= 28 ? "#60a5fa" : "#4ade80";
 
   return (
     <div className="flex items-center gap-4 p-4 transition-colors hover:bg-muted/50">
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full shadow">
-        <svg className="-rotate-90 absolute inset-0" viewBox="0 0 48 48" fill="none">
+      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full">
+        <svg className="-rotate-90 absolute inset-0" viewBox="0 0 56 56" fill="none">
           <title>Progress Bar</title>
+          <circle cx="28" cy="28" r="26" strokeWidth="4" stroke={statusColor} strokeOpacity="0.1" />
           <circle
-            cx="24"
-            cy="24"
-            r="23"
-            strokeWidth="2"
-            stroke="hsl(var(--primary))"
+            cx="28"
+            cy="28"
+            r="26"
+            strokeWidth="4"
+            stroke={statusColor}
             strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * 22}
-            strokeDashoffset={2 * Math.PI * 22 * (1 - patient.progress / 100)}
+            strokeDasharray={2 * Math.PI * 26}
+            strokeDashoffset={2 * Math.PI * 26 * (1 - patient.weeks / 40.5)}
           />
         </svg>
-        <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-muted font-semibold text-muted-foreground">
-          {/* {getInitials(patient.name)} */}
-          <Avatar className="h-11 w-11 bg-white shadow-md ring-1 ring-primary/25">
+        <div className="relative flex h-12 w-12 items-center justify-center rounded-full font-semibold text-muted-foreground">
+          <Avatar className="h-12 w-12 bg-white shadow-md">
             <AvatarImage
               src={undefined}
               alt={patient.name || ""}
               className="rounded-full object-cover"
             />
-            <AvatarFallback className="bg-muted font-semibold text-lg text-primary">
+            <AvatarFallback className="font-semibold text-lg text-primary">
               {getInitials(patient.name ?? "")}
             </AvatarFallback>
           </Avatar>
-          <div
-            className={`absolute right-0.5 bottom-0.5 h-2 w-2 shrink-0 rounded-full ${statusColor}`}
-          />
         </div>
       </div>
       <div className="min-w-0 flex-1">
@@ -72,7 +58,7 @@ export function PatientCard({
               <span>DPP: {dppFormatted}</span>
               &bull;
               <span className="flex items-center gap-2 text-muted-foreground">
-                {formattedGestationalAge(patient.weeks, patient.days)}
+                {calculateGestationalAge(patient.dum)?.label}
                 {patient.weeks >= 40 && (
                   <Flame className="size-4 text-destructive" fill="hsl(var(--destructive))" />
                 )}

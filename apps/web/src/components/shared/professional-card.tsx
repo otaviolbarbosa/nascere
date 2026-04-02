@@ -12,6 +12,7 @@ import {
 import type { EnterpriseProfessional } from "@/services/professional";
 import { getInitials } from "@/utils";
 import {
+  CalendarPlus,
   ChevronRight,
   Mail,
   MoreHorizontal,
@@ -19,6 +20,7 @@ import {
   Search,
   Stethoscope,
   UserMinus,
+  UserPlus,
 } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
@@ -31,10 +33,17 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
 
 type ProfessionalCardProps = {
   professional: EnterpriseProfessional;
+  onAddPatient: () => void;
+  onAddCalendarEvent: () => void;
   onRemove: (professional: EnterpriseProfessional) => void;
 };
 
-export function ProfessionalCard({ professional, onRemove }: ProfessionalCardProps) {
+export function ProfessionalCard({
+  professional,
+  onAddPatient,
+  onAddCalendarEvent,
+  onRemove,
+}: ProfessionalCardProps) {
   const typeLabel = professional.professional_type
     ? (PROFESSIONAL_TYPE_LABELS[professional.professional_type] ?? professional.professional_type)
     : null;
@@ -44,7 +53,7 @@ export function ProfessionalCard({ professional, onRemove }: ProfessionalCardPro
       {/* Header */}
       <div className="relative flex justify-end bg-muted/50 px-4 py-3">
         <div className="absolute top-5 left-4 flex items-center gap-2">
-          <Avatar className="h-16 w-16 bg-white p-0.5 shadow-md ring-1 ring-primary/25">
+          <Avatar className="h-16 w-16 bg-white p-1">
             <AvatarImage
               src={professional.avatar_url || undefined}
               alt={professional.name || ""}
@@ -75,6 +84,14 @@ export function ProfessionalCard({ professional, onRemove }: ProfessionalCardPro
               >
                 <Search className="mr-2 size-4" />
                 Ver Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onAddPatient}>
+                <UserPlus className="mr-2 size-4" />
+                Adicionar Gestante
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onAddCalendarEvent}>
+                <CalendarPlus className="mr-2 size-4" />
+                Adicionar Evento
               </DropdownMenuItem>
               <Separator />
               <DropdownMenuItem

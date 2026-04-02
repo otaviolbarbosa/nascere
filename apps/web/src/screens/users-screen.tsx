@@ -1,5 +1,6 @@
 "use client";
 
+import { getPatientsByProfessionalAction } from "@/actions/get-patients-by-professional-action";
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -8,22 +9,47 @@ import { StaffCard } from "@/components/shared/staff-card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AddEnterpriseProfessionalModal from "@/modals/add-enterprise-professional-modal";
+import NewAppointmentModal from "@/modals/new-appointment-modal";
+import NewPatientModal from "@/modals/new-patient-modal";
 import RemoveEnterpriseProfessionalModal from "@/modals/remove-enterprise-professional-modal";
 import type { EnterpriseStaffMember } from "@/services/enterprise-users";
 import type { EnterpriseProfessional } from "@/services/professional";
+import type { Tables } from "@nascere/supabase";
 import { BriefcaseMedical, Stethoscope, UserPlus } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type UsersScreenProps = {
   professionals: EnterpriseProfessional[];
   staff: EnterpriseStaffMember[];
 };
 
+type Patient = Tables<"patients">;
+
 export default function UsersScreen({ professionals, staff }: UsersScreenProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [patients, setPatients] = useState<{ id: string; name: string }[]>();
+  const [selectedProfessional, setSelectedProfessional] = useState<EnterpriseProfessional>();
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
   const [professionalToRemove, setProfessionalToRemove] = useState<EnterpriseProfessional | null>(
     null,
   );
+
+  const { executeAsync: executeFetchPatients } = useAction(getPatientsByProfessionalAction);
+
+  const fetchPatients = async (professionalId: string) => {
+    const { data: patientsData } = await executeFetchPatients({
+      professionalId,
+    });
+
+    if (!patientsData) {
+      toast("Erro ao carregar dados de pacientes");
+    }
+
+    setPatients(patientsData?.patients);
+  };
 
   return (
     <div>
@@ -87,6 +113,12 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
                   <ProfessionalCard
                     key={professional.id}
                     professional={professional}
+                    onAddPatient={async () => {
+                      await fetchPatients(professional.id);
+                      setSelectedProfessional(professional);
+                      setShowNewPatientModal(true);
+                    }}
+                    onAddCalendarEvent={() => setShowNewAppointmentModal(true)}
                     onRemove={setProfessionalToRemove}
                   />
                 ))}
@@ -119,6 +151,18 @@ export default function UsersScreen({ professionals, staff }: UsersScreenProps) 
         professional={professionalToRemove}
         showModal={!!professionalToRemove}
         setShowModal={(open) => !open && setProfessionalToRemove(null)}
+      />
+
+      <NewPatientModal
+        showModal={showNewPatientModal}
+        professional={selectedProfessional}
+        setShowModal={setShowNewPatientModal}
+      />
+
+      <NewAppointmentModal
+        patients={patients as Patient[]}
+        showModal={showNewAppointmentModal}
+        setShowModal={setShowNewAppointmentModal}
       />
     </div>
   );
