@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@repo/ui/card";
 import { cn } from "@/lib/utils";
 import { MONTH_LABELS_FULL } from "@/services/home";
 import { TrendingDown, TrendingUp } from "lucide-react";

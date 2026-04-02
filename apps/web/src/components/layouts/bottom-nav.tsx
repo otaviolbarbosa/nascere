@@ -199,8 +199,9 @@ export default function BottomNav() {
                 "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
                 navItem.isActive &&
-                  "gradient-primary size-auto flex-1 pr-4 pl-0 opacity-100 shadow-md",
+                  "gradient-primary size-auto flex-1 justify-between px-4 opacity-100 shadow-md",
               )}
+              prefetch
             >
               <navItem.icon
                 className={cn(
@@ -212,7 +213,7 @@ export default function BottomNav() {
               <div
                 className={cn(
                   "flex-1 overflow-hidden text-center font-medium font-poppins text-white text-xs transition-all duration-500 ease-out",
-                  navItem.isActive ? "max-w-24 pl-2 opacity-100" : "max-w-0 opacity-0",
+                  navItem.isActive ? "opacity-100" : "max-w-0 opacity-0",
                 )}
               >
                 {navItem.name}

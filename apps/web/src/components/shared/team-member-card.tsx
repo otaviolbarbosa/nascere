@@ -1,8 +1,8 @@
 "use client";
 
 import { removeBackupProfessionalAction } from "@/actions/remove-backup-professional-action";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@repo/ui/badge";
+import { Card, CardContent } from "@repo/ui/card";
 import type { TeamMember } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import { Trash } from "lucide-react";
@@ -10,7 +10,7 @@ import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../providers/auth-provider";
-import { Button } from "../ui/button";
+import { Button } from "@repo/ui/button";
 import Avatar from "./avatar";
 import { ConfirmModal } from "./confirm-modal";
 

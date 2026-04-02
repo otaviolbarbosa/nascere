@@ -3,9 +3,9 @@
 import { addBackupProfessionalAction } from "@/actions/add-backup-professional-action";
 import { searchUsersAction } from "@/actions/search-users-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@repo/ui/button";
+import { Input } from "@repo/ui/input";
+import { Label } from "@repo/ui/label";
 import type { ProfessionalType } from "@/types";
 import { professionalTypeLabels } from "@/utils/team";
 import { Loader2, X } from "lucide-react";

@@ -5,9 +5,9 @@ import { getDocumentDownloadUrlAction } from "@/actions/get-document-download-ur
 import { getPatientDocumentsAction } from "@/actions/get-patient-documents-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@repo/ui/button";
+import { Card, CardContent } from "@repo/ui/card";
+import { Skeleton } from "@repo/ui/skeleton";
 import {
   Download,
   File,

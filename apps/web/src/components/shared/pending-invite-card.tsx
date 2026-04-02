@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@repo/ui/badge";
+import { Card, CardContent } from "@repo/ui/card";
 import { professionalTypeLabels } from "@/utils/team";
 import { Clock } from "lucide-react";
 import Avatar from "./avatar";

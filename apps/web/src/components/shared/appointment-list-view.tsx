@@ -1,9 +1,9 @@
 "use client";
 
 import { EmptyState } from "@/components/shared/empty-state";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@repo/ui/badge";
+import { Card, CardContent } from "@repo/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/tabs";
 import { dayjs } from "@/lib/dayjs";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { Calendar, Clock, MapPin, Stethoscope } from "lucide-react";

@@ -2,8 +2,8 @@
 
 import { upsertObstetricHistoryAction } from "@/actions/upsert-obstetric-history-action";
 import { ContentModal } from "@/components/shared/content-modal";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@repo/ui/button";
+import { Checkbox } from "@repo/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -11,9 +11,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
+import { Separator } from "@repo/ui/separator";
 import { CLINICAL_FIELDS, SURGICAL_FIELDS } from "@/lib/prenatal-constants";
 import {
   type ObstetricHistoryInput,

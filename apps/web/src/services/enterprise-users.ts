@@ -66,6 +66,7 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
     phone: p.phone,
     professional_type: p.professional_type,
     patient_count: patientCountByProfessional[p.id]?.size ?? 0,
+    avatar_url: p.avatar_url ?? undefined,
   }));
 
   const staff: EnterpriseStaffMember[] = (staffData ?? []).map((s) => ({
@@ -73,6 +74,7 @@ export async function getEnterpriseUsers(): Promise<EnterpriseUsersResult> {
     name: s.name,
     email: s.email,
     user_type: s.user_type as "manager" | "secretary",
+    avatar_url: s.avatar_url ?? undefined,
   }));
 
   return { professionals, staff, enterpriseId };

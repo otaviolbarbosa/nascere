@@ -14,9 +14,9 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from "@repo/ui/accordion";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
 import { PREGNANCY_DELIVERY_METHOD } from "@/lib/constants";
 import { CheckCircle2, SearchX, Trash2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";

@@ -7,8 +7,8 @@ import { PeriodFilterDropdown } from "@/components/billing/period-filter-dropdow
 import { Header } from "@/components/layouts/header";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@repo/ui/badge";
+import { Skeleton } from "@repo/ui/skeleton";
 import { useBillingDashboard } from "@/hooks/use-billing-dashboard";
 import type { BillingPeriod } from "@/lib/billing/period-range";
 import { getPeriodRange } from "@/lib/billing/period-range";

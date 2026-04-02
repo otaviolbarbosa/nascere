@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPatientTeam } from "@/components/shared/loading-state";
 import PendingInviteCard from "@/components/shared/pending-invite-card";
 import TeamMemberCard from "@/components/shared/team-member-card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import AddBackupProfessionalModal from "@/modals/add-backup-professional-modal";
 import AddProfessionalModal from "@/modals/add-professional-modal";
 import type { ProfessionalType } from "@/types";

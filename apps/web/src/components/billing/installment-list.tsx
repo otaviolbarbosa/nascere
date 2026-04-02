@@ -1,8 +1,8 @@
 "use client";
 
 import { saveInstallmentLinkAction } from "@/actions/save-installment-link-action";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@repo/ui/button";
+import { Input } from "@repo/ui/input";
 import { formatCurrency } from "@/lib/billing/calculations";
 import { dayjs } from "@/lib/dayjs";
 import type { Tables } from "@nascere/supabase/types";

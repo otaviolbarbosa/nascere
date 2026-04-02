@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
-import { Button } from "@/components/ui/button";
+import { Button } from "@repo/ui/button";
 import {
   Form,
   FormControl,
@@ -18,9 +18,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+} from "@repo/ui/form";
+import { Input } from "@repo/ui/input";
+import { Separator } from "@repo/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 
 const loginSchema = z.object({

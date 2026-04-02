@@ -3,10 +3,10 @@
 import { cancelSubscriptionAction } from "@/actions/cancel-subscription-action";
 import { ConfirmModal } from "@/components/shared/confirm-modal";
 import { isStaff } from "@/lib/access-control";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@repo/ui/badge";
+import { Button } from "@repo/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/card";
+import { Separator } from "@repo/ui/separator";
 import type { Tables } from "@nascere/supabase/types";
 import { Building2, Calendar, CheckCircle2, CreditCard, RefreshCw, User } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
