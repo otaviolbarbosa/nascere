@@ -1,11 +1,12 @@
 "use client";
-import type { Tables } from "@ventre/supabase";
-import dayjs from "dayjs";
-import { Pencil } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@ventre/ui/button";
-import InfoItem from "./info-item";
 import { EditPatientModal } from "@/modals/edit-patient-modal";
+import type { Tables } from "@ventre/supabase";
+import { Button } from "@ventre/ui/button";
+import dayjs from "dayjs";
+import { MapPinned, Pencil } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import InfoItem from "./info-item";
 
 type PatientInfoProps = {
   patient: Tables<"patients"> & {
@@ -18,6 +19,21 @@ type PatientInfoProps = {
 
 export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const resolveGoogleMapsLink = useMemo(() => {
+    const address = [
+      patient.street,
+      patient.number,
+      patient.complement,
+      patient.neighborhood,
+      patient.city,
+      patient.state,
+      patient.zipcode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+    return `https://www.google.com/maps/search/${address}`;
+  }, [patient]);
 
   return (
     <>
@@ -47,19 +63,45 @@ export default function PatientInfo({ patient, onChange }: PatientInfoProps) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <InfoItem label="CEP" value={patient.zipcode} />
-        <InfoItem label="Estado" value={patient.state} />
-        <InfoItem label="Cidade" value={patient.city} />
-      </div>
-
-      <InfoItem label="Rua" value={patient.street} />
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <InfoItem label="Número" value={patient.number} />
-        <InfoItem label="Complemento" value={patient.complement} />
-        <InfoItem label="Bairro" value={patient.neighborhood} />
-      </div>
+      <InfoItem
+        label="Endereço"
+        value={
+          <div className="flex justify-between gap-4">
+            <div>
+              <div>{[patient.street, patient.number].filter(Boolean).join(", ")}</div>
+              <div>{patient.complement}</div>
+              <div>{patient.neighborhood}</div>
+              <div>{[patient.city, patient.state].filter(Boolean).join("-")}</div>
+              <div>{patient.zipcode}</div>
+            </div>
+            {resolveGoogleMapsLink ? (
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="-top-4 absolute right-0 hidden sm:flex"
+                  asChild
+                >
+                  <Link href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
+                    Navegar para o endereço
+                    <MapPinned />
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="-top-4 absolute right-0 flex sm:hidden"
+                  asChild
+                >
+                  <Link href={resolveGoogleMapsLink} target="_blank" rel="noreferrer">
+                    <MapPinned />
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        }
+      />
 
       <InfoItem label="Observações" value={patient.observations} />
 
