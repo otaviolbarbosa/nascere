@@ -84,9 +84,28 @@ export const getPaginatedUsersAction = adminActionClient
 
     if (error) throw new Error(error.message);
 
-    return data as {
+    const rpcResult = data as {
       data: UserWithEnterprise[];
       pagination: { page: number; size: number; total_pages: number };
+    };
+
+    const authResults = await Promise.all(
+      rpcResult.data.map((u) => ctx.supabaseAdmin.auth.admin.getUserById(u.id)),
+    );
+
+    const confirmedMap = new Map<string, boolean>()
+    for (const r of authResults) {
+      if (!r.error && r.data.user) {
+        confirmedMap.set(r.data.user.id, !!r.data.user.email_confirmed_at)
+      }
+    }
+
+    return {
+      data: rpcResult.data.map((u) => ({
+        ...u,
+        email_confirmed: confirmedMap.get(u.id) ?? false,
+      })),
+      pagination: rpcResult.pagination,
     };
   });
 

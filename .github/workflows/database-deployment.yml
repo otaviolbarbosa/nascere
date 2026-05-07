@@ -52,3 +52,5 @@ jobs:
       - run: supabase link --project-ref $PROJECT_ID
 
       - run: supabase db push
+
+      - run: node scripts/with-env.cjs supabase functions deploy --project-ref \\$NEXT_PUBLIC_SUPABASE_PROJECCT_ID
