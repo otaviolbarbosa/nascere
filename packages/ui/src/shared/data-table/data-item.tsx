@@ -39,10 +39,10 @@ export const DataItem = <T extends Model>({
       case "edit":
         return (
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon-sm"
+            title="Editar item"
             onClick={() => handleEditItem(item.id)}
-            className="btn btn-secondary btn-sm btn-square"
           >
             <Pencil className="size-4" />
           </Button>
@@ -52,6 +52,7 @@ export const DataItem = <T extends Model>({
           <Button
             variant="destructive"
             size="icon-sm"
+            title="Exlcuir item"
             onClick={() =>
               confirm({
                 title: "Excluir item",
@@ -80,7 +81,7 @@ export const DataItem = <T extends Model>({
         </TableCell>
       ))}
       <TableCell className="w-[1%] pr-3">
-        <div className="flex gap-1">
+        <div className="flex justify-end gap-1">
           {actions?.map((action) => (
             <Fragment key={`action-${action}`}>{resolveAction(item, action)}</Fragment>
           ))}

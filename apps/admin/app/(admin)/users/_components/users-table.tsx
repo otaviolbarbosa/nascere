@@ -1,18 +1,20 @@
 "use client";
 
+import { sendConfirmationEmailAction } from "@/actions/patients";
 import { deleteUserAction, getPaginatedUsersAction } from "@/actions/users";
 import { formatDate } from "@/lib/utils";
 import type { UserWithEnterprise } from "@/types";
 import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { DataTable } from "@ventre/ui/shared/data-table";
 import { UserAvatar } from "@ventre/ui/shared/user-avatar";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, LoaderCircle, UserCheck } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type User = UserWithEnterprise;
+type User = UserWithEnterprise & { email_confirmed: boolean };
 
 const userTypeLabels: Record<string, string> = {
   professional: "Profissional",
@@ -51,6 +53,15 @@ export function UsersTable() {
     onError: ({ error }) => {
       toast.error(error.serverError ?? "Erro ao excluir usuário");
     },
+  });
+
+  const {
+    execute: sendConfirmationEmail,
+    isExecuting,
+    isPending,
+  } = useAction(sendConfirmationEmailAction, {
+    onSuccess: () => toast.success("E-mail de confirmação enviado!"),
+    onError: ({ error }) => toast.error(error.serverError ?? "Erro ao enviar e-mail"),
   });
 
   const fetchData = useCallback(
@@ -134,8 +145,40 @@ export function UsersTable() {
             name: "created_at",
             callback: (user) => formatDate(user.created_at),
           },
+          {
+            label: "Confirmado?",
+            name: "email_confirmed",
+            callback: (user) =>
+              user.email_confirmed ? (
+                <Badge variant="default">Sim</Badge>
+              ) : (
+                <Badge variant="secondary">Não</Badge>
+              ),
+          },
         ],
-        actions: ["edit", "delete"],
+        actions: [
+          (ent) =>
+            ent.email && !ent.email_confirmed ? (
+              <Button
+                size="icon-sm"
+                variant="outline"
+                title="Enviar e-mail de confirmação"
+                disabled={isExecuting || isPending}
+                onClick={() =>
+                  ent.email_confirmed ? null : sendConfirmationEmail({ email: ent.email })
+                }
+              >
+                {isExecuting || isPending ? (
+                  <LoaderCircle className="animate-spin" />
+                ) : (
+                  <UserCheck />
+                )}
+              </Button>
+            ) : null,
+
+          "edit",
+          "delete",
+        ],
       }}
     />
   );
