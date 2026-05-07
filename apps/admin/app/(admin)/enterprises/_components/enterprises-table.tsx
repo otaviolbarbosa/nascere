@@ -4,7 +4,9 @@ import { deleteEnterpriseAction, getPaginatedEnterprisesAction } from "@/actions
 import { formatDate } from "@/lib/utils";
 import type { Tables } from "@ventre/supabase/types";
 import { Badge } from "@ventre/ui/badge";
+import { Button } from "@ventre/ui/button";
 import { DataTable } from "@ventre/ui/shared/data-table";
+import { ExternalLink } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
@@ -73,6 +75,20 @@ export function EnterprisesTable() {
           {
             label: "Profissionais",
             name: "professionals_amount",
+            callback: (ent) => (
+              <div className="flex items-center">
+                {ent.professionals_amount}
+                <Button size="icon-sm" variant="ghost" asChild>
+                  <Link
+                    href={`/enterprises/${ent.id}/professionals`}
+                    className="text-primary text-sm hover:underline"
+                    title="Ver profissionais da empresa"
+                  >
+                    <ExternalLink />
+                  </Link>
+                </Button>
+              </div>
+            ),
           },
           {
             label: "Status",
@@ -89,14 +105,7 @@ export function EnterprisesTable() {
             callback: (ent) => formatDate(ent.created_at),
           },
         ],
-        actions: [
-          (ent) => (
-            <Link href={`/enterprises/${ent.id}`} className="text-primary text-sm hover:underline">
-              Editar
-            </Link>
-          ),
-          "delete",
-        ],
+        actions: ["edit", "delete"],
       }}
     />
   );
