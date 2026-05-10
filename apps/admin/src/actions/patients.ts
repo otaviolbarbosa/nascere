@@ -1,7 +1,6 @@
 "use server";
 
 import { adminActionClient } from "@/lib/safe-action";
-import type { Tables } from "@ventre/supabase";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -28,31 +27,21 @@ export const getPaginatedPatientsAction = adminActionClient
 
     const { data, error, count } = await supabaseAdmin
       .from("patients")
-      .select("id, name, email, phone, date_of_birth, created_at, user_id", { count: "exact" })
+      .select(
+        "*, team_members(id, is_backup, professional:users!team_members_professional_id_fkey(id, name, avatar_url))",
+        { count: "exact" },
+      )
       .order(field, { ascending })
       .range(from, to);
 
     if (error) throw new Error(error.message);
 
-    const authResults = await Promise.all(
-      data.map((p) =>
-        p.user_id ? supabaseAdmin.auth.admin.getUserById(p.user_id) : Promise.resolve(null),
-      ),
-    );
-
-    const confirmedMap = new Map<string, boolean>();
-    for (const r of authResults) {
-      if (r && !r.error && r.data.user) {
-        confirmedMap.set(r.data.user.id, !!r.data.user.email_confirmed_at);
-      }
-    }
-
     const total_pages = Math.ceil((count ?? 0) / size);
 
     return {
       data: data.map((p) => ({
-        ...(p as Tables<"patients">),
-        email_confirmed: p.user_id ? (confirmedMap.get(p.user_id) ?? false) : false,
+        ...p,
+        team_members: p.team_members.filter((m) => !m.is_backup),
       })),
       pagination: { page, size, total_pages },
     };

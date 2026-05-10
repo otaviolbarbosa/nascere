@@ -3,13 +3,18 @@
 import { deletePatientAction, getPaginatedPatientsAction } from "@/actions/patients";
 import { formatDate } from "@/lib/utils";
 import type { Tables } from "@ventre/supabase";
-import { Badge } from "@ventre/ui/badge";
 import { DataTable } from "@ventre/ui/shared/data-table";
+import { UserAvatar } from "@ventre/ui/shared/user-avatar";
 import { useAction } from "next-safe-action/hooks";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type Patient = Tables<"patients"> & { email_confirmed: boolean };
+type TeamMember = {
+  id: string;
+  professional: { id: string; name: string; avatar_url: string | null } | null;
+};
+
+type Patient = Tables<"patients"> & { team_members: TeamMember[] };
 
 export function PatientsTable() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -69,13 +74,21 @@ export function PatientsTable() {
             callback: (p) => formatDate(p.created_at),
           },
           {
-            label: "Confirmado?",
-            name: "email_confirmed",
+            label: "Equipe",
+            name: "team_members",
             callback: (p) =>
-              p.email_confirmed ? (
-                <Badge variant="default">Sim</Badge>
+              p.team_members.length === 0 ? (
+                <span className="text-neutral-400 text-xs">—</span>
               ) : (
-                <Badge variant="secondary">Não</Badge>
+                <div className="flex flex-row-reverse justify-end gap-1">
+                  {p.team_members.map((m) =>
+                    m.professional ? (
+                      <div key={m.id} title={m.professional.name} className="h-8 w-8 rounded-full">
+                        <UserAvatar user={m.professional} size={8} />
+                      </div>
+                    ) : null,
+                  )}
+                </div>
               ),
           },
         ],
