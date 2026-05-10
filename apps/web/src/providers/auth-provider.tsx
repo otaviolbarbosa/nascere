@@ -2,9 +2,9 @@
 
 import { invalidateUserCacheAction } from "@/actions/invalidate-user-cache-action";
 import { isManager, isPatient, isProfessional, isSecretary, isStaff } from "@/lib/access-control";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@ventre/supabase";
 import type { Tables } from "@ventre/supabase/types";
-import type { User } from "@supabase/supabase-js";
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
 
 type UserProfile = Tables<"users">;
@@ -24,6 +24,9 @@ interface AuthContextType {
   signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
   isAuthenticated: boolean;
   isProfessional: boolean;
+  isObstetrician: boolean;
+  isNurse: boolean;
+  isDoula: boolean;
   isPatient: boolean;
   isManager: boolean;
   isSecretary: boolean;
@@ -139,6 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
     isAuthenticated: !!user,
     isProfessional: isProfessional(profile),
+    isObstetrician: isProfessional(profile) && profile?.professional_type === "obstetra",
+    isNurse: isProfessional(profile) && profile?.professional_type === "enfermeiro",
+    isDoula: isProfessional(profile) && profile?.professional_type === "doula",
     isPatient: isPatient(profile),
     isManager: isManager(profile),
     isSecretary: isSecretary(profile),

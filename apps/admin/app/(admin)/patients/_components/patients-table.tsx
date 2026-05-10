@@ -64,11 +64,6 @@ export function PatientsTable() {
           { label: "E-mail", name: "email", callback: (p) => p.email ?? "—" },
           { label: "Telefone", name: "phone" },
           {
-            label: "Nascimento",
-            name: "date_of_birth",
-            callback: (p) => formatDate(p.date_of_birth),
-          },
-          {
             label: "Cadastrado em",
             name: "created_at",
             callback: (p) => formatDate(p.created_at),

@@ -8,10 +8,11 @@ import { dayjs } from "@/lib/dayjs";
 import { type CreateEvolutionInput, createEvolutionSchema } from "@/lib/validations/evolution";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Skeleton } from "@ventre/ui/skeleton";
 import { Textarea } from "@ventre/ui/textarea";
-import { ClipboardList, Loader2, Plus } from "lucide-react";
+import { ClipboardList, Loader2, Lock, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -23,6 +24,7 @@ type Evolution = {
   professional_id: string;
   content: string;
   created_at: string;
+  is_public: boolean;
   professional: { id: string; name: string } | null;
 };
 
@@ -39,7 +41,7 @@ function EvolutionForm({
 }) {
   const form = useForm<CreateEvolutionInput>({
     resolver: zodResolver(createEvolutionSchema),
-    defaultValues: { content: "" },
+    defaultValues: { content: "", is_public: true },
   });
 
   return (
@@ -55,6 +57,23 @@ function EvolutionForm({
                 <Textarea placeholder="Descreva a evolução da paciente..." rows={6} {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="is_public"
+          render={({ field }) => (
+            <FormItem className="flex items-center gap-2 space-y-0">
+              <FormControl>
+                <Checkbox
+                  checked={!field.value}
+                  onCheckedChange={(checked) => field.onChange(!checked)}
+                />
+              </FormControl>
+              <FormLabel className="cursor-pointer font-normal text-sm">
+                Evolução privada (visível apenas para mim)
+              </FormLabel>
             </FormItem>
           )}
         />
@@ -146,10 +165,18 @@ export default function PatientEvolution({ patientId }: PatientEvolutionProps) {
               className="rounded-lg border p-4 transition-colors hover:bg-muted/50"
             >
               <p className="whitespace-pre-wrap text-sm">{evolution.content}</p>
-              <p className="mt-3 text-muted-foreground text-xs">
-                Registro adicionado por: {evolution.professional?.name || "Desconhecido"}, em{" "}
-                {dayjs(evolution.created_at).format("DD/MM/YYYY [às] HH:mm")}
-              </p>
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <p className="text-muted-foreground text-xs">
+                  Registro adicionado por: {evolution.professional?.name || "Desconhecido"}, em{" "}
+                  {dayjs(evolution.created_at).format("DD/MM/YYYY [às] HH:mm")}
+                </p>
+                {!evolution.is_public && (
+                  <span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
+                    <Lock className="h-3 w-3" />
+                    Privada
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
