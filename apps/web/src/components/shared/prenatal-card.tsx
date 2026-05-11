@@ -122,11 +122,13 @@ function GeneralDataSection({
   patientId,
   pregnancyId,
   data,
+  isEditable,
   onRefresh,
 }: {
   patientId: string;
   pregnancyId: string;
   data: PrenatalData;
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -146,25 +148,27 @@ function GeneralDataSection({
         icon={User}
         title="Dados Gerais"
         action={
-          <>
-            <Button
-              size="icon"
-              variant="outline"
-              className="sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-3 w-3" />
-              Editar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                variant="outline"
+                className="sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-3 w-3" />
+                Editar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -277,12 +281,14 @@ function ObstetricHistorySection({
   pregnancyId,
   history,
   pregnancy,
+  isEditable,
   onRefresh,
 }: {
   patientId: string;
   pregnancyId: string;
   history: Tables<"patient_obstetric_history"> | null;
   pregnancy: PrenatalData["pregnancy"];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -302,25 +308,27 @@ function ObstetricHistorySection({
         icon={ClipboardList}
         title="Antecedentes Obstétricos"
         action={
-          <>
-            <Button
-              size="icon"
-              variant="outline"
-              className="sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-3 w-3" />
-              Editar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                variant="outline"
+                className="sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-3 w-3" />
+                Editar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -404,10 +412,12 @@ function ObstetricHistorySection({
 function RiskFactorsSection({
   pregnancyId,
   riskFactors,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   riskFactors: Tables<"pregnancy_risk_factors"> | null;
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -422,25 +432,27 @@ function RiskFactorsSection({
         icon={ShieldAlert}
         title="Fatores de Risco da Gestação"
         action={
-          <>
-            <Button
-              size="icon"
-              variant="outline"
-              className="sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Pencil className="h-3 w-3" />
-              Editar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                variant="outline"
+                className="sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Pencil className="h-3 w-3" />
+                Editar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -501,10 +513,12 @@ function RiskFactorsSection({
 function EvolutionsSection({
   pregnancyId,
   evolutions,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   evolutions: Tables<"pregnancy_evolutions">[];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -515,23 +529,25 @@ function EvolutionsSection({
         icon={Activity}
         title="Evoluções da Gestação"
         action={
-          <>
-            <Button
-              size="icon"
-              className="gradient-primary sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-3 w-3" />
-              Adicionar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                className="gradient-primary sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                className="gradient-primary hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -664,10 +680,12 @@ function EvolutionsSection({
 function UltrasoundsSection({
   pregnancyId,
   ultrasounds,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   ultrasounds: Tables<"ultrasounds">[];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -678,23 +696,25 @@ function UltrasoundsSection({
         icon={Baby}
         title="Ultrassonografias"
         action={
-          <>
-            <Button
-              size="icon"
-              className="gradient-primary sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-3 w-3" />
-              Adicionar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                className="gradient-primary sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                className="gradient-primary hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -827,10 +847,12 @@ function UltrasoundsSection({
 function LabExamsSection({
   pregnancyId,
   labExams,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   labExams: Tables<"lab_exam_results">[];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -862,23 +884,25 @@ function LabExamsSection({
         icon={FlaskConical}
         title="Exames Laboratoriais"
         action={
-          <>
-            <Button
-              size="icon"
-              className="gradient-primary sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-3 w-3" />
-              Adicionar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                className="gradient-primary sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                className="gradient-primary hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -968,10 +992,12 @@ function LabExamsSection({
 function VaccinesSection({
   pregnancyId,
   vaccines,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   vaccines: Tables<"vaccine_records">[];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [editingVaccineName, setEditingVaccineName] = useState<string | null>(null);
@@ -991,7 +1017,7 @@ function VaccinesSection({
             <button
               key={vName}
               type="button"
-              onClick={() => setEditingVaccineName(vName)}
+              onClick={() => (isEditable ? setEditingVaccineName(vName) : null)}
               className="flex items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
             >
               {!record || !record.status ? (
@@ -1040,10 +1066,12 @@ function VaccinesSection({
 function OtherExamsSection({
   pregnancyId,
   otherExams,
+  isEditable,
   onRefresh,
 }: {
   pregnancyId: string;
   otherExams: Tables<"other_exams">[];
+  isEditable: boolean;
   onRefresh: () => void;
 }) {
   const [showModal, setShowModal] = useState(false);
@@ -1054,23 +1082,25 @@ function OtherExamsSection({
         icon={TestTube2}
         title="Outros Exames"
         action={
-          <>
-            <Button
-              size="icon"
-              className="gradient-primary sm:hidden"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="gradient-primary hidden sm:flex"
-              onClick={() => setShowModal(true)}
-            >
-              <Plus className="h-3 w-3" />
-              Adicionar
-            </Button>
-          </>
+          isEditable ? (
+            <>
+              <Button
+                size="icon"
+                className="gradient-primary sm:hidden"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                className="gradient-primary hidden sm:flex"
+                onClick={() => setShowModal(true)}
+              >
+                <Plus className="h-3 w-3" />
+                Adicionar
+              </Button>
+            </>
+          ) : null
         }
       />
 
@@ -1115,9 +1145,10 @@ function OtherExamsSection({
 type PrenatalCardProps = {
   patientId: string;
   pregnancyId: string | null | undefined;
+  isEditable: boolean;
 };
 
-export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardProps) {
+export default function PrenatalCard({ patientId, pregnancyId, isEditable }: PrenatalCardProps) {
   const { execute: fetchData, result, isPending } = useAction(getPrenatalCardAction);
 
   const refresh = useCallback(() => {
@@ -1166,6 +1197,7 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
         patientId={patientId}
         pregnancyId={pregnancyId}
         data={data}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
 
@@ -1176,6 +1208,7 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
         pregnancyId={pregnancyId}
         history={data.obstetricHistory}
         pregnancy={data.pregnancy}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
 
@@ -1184,6 +1217,7 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
       <RiskFactorsSection
         pregnancyId={pregnancyId}
         riskFactors={data.riskFactors}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
 
@@ -1192,6 +1226,7 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
       <EvolutionsSection
         pregnancyId={pregnancyId}
         evolutions={data.evolutions}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
 
@@ -1200,22 +1235,34 @@ export default function PrenatalCard({ patientId, pregnancyId }: PrenatalCardPro
       <UltrasoundsSection
         pregnancyId={pregnancyId}
         ultrasounds={data.ultrasounds}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
 
       <Separator />
 
-      <LabExamsSection pregnancyId={pregnancyId} labExams={data.labExams} onRefresh={refresh} />
+      <LabExamsSection
+        pregnancyId={pregnancyId}
+        labExams={data.labExams}
+        isEditable={isEditable}
+        onRefresh={refresh}
+      />
 
       <Separator />
 
-      <VaccinesSection pregnancyId={pregnancyId} vaccines={data.vaccines} onRefresh={refresh} />
+      <VaccinesSection
+        pregnancyId={pregnancyId}
+        vaccines={data.vaccines}
+        isEditable={isEditable}
+        onRefresh={refresh}
+      />
 
       <Separator />
 
       <OtherExamsSection
         pregnancyId={pregnancyId}
         otherExams={data.otherExams}
+        isEditable={isEditable}
         onRefresh={refresh}
       />
     </div>

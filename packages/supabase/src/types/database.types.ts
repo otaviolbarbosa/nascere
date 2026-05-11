@@ -667,6 +667,7 @@ export type Database = {
           content: string
           created_at: string | null
           id: string
+          is_public: boolean
           patient_id: string
           professional_id: string
         }
@@ -674,6 +675,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          is_public?: boolean
           patient_id: string
           professional_id: string
         }
@@ -681,6 +683,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          is_public?: boolean
           patient_id?: string
           professional_id?: string
         }

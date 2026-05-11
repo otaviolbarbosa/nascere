@@ -19,6 +19,7 @@ export const createEvolutionAction = authActionClient
         patient_id: parsedInput.patientId,
         professional_id: user.id,
         content: parsedInput.data.content,
+        is_public: parsedInput.data.is_public,
       })
       .select("*, professional:professional_id(id, name)")
       .single();

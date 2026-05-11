@@ -52,9 +52,9 @@ export const DataTable = <T extends Model>({
   const visibleColumns = columns?.filter((col) => !hiddenColumns.has(String(col.name))) ?? [];
 
   return (
-    <div className="flex h-full flex-1 flex-col space-y-3 bg-white">
+    <div className="flex h-full flex-1 flex-col space-y-3">
       <div className="flex-1">
-        <div className="overflow-hidden rounded-xl border border-neutral-200">
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
           {/* Toolbar */}
           <div className="flex w-full items-center justify-between gap-3 border-neutral-200 border-b px-3 py-3">
             <div>&nbsp;</div>

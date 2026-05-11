@@ -208,7 +208,7 @@ export default function BottomNav() {
               key={`bottom-nav-${navItem.name}`}
               href={navItem.href}
               className={cn(
-                "relative flex size-12 items-center justify-center rounded-full border border-primary/20 bg-white",
+                "relative flex h-[52px] w-[52px] items-center justify-center rounded-full border border-primary/20 bg-white",
                 "transition-all duration-500 ease-out",
                 navItem.isActive &&
                   "gradient-primary size-auto flex-1 justify-between px-4 opacity-100 shadow-md",
