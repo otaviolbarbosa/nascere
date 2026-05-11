@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
     if (error) {
       console.error("[fetchProfile] erro ao buscar perfil:", error);
+      return;
     }
     setProfile(data);
   }, []);
@@ -65,17 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Use functional update to avoid changing the reference when it's the same user,
-      // preventing unnecessary re-renders and cascading effect re-runs in consumers.
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser((prev) => {
         if (prev?.id === session?.user?.id) return prev;
         return session?.user ?? null;
       });
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
+
+      if (event === "SIGNED_OUT") {
         setProfile(null);
+      } else if (event !== "TOKEN_REFRESHED" && session?.user) {
+        await fetchProfile(session.user.id);
       }
     });
 
