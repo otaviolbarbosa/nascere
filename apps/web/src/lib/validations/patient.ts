@@ -21,7 +21,10 @@ export const createPatientSchema = z.object({
   zipcode: z.string().optional(),
   baby_name: z.string().optional(),
   observations: z.string().optional(),
-  professional_id: z.string().uuid().optional(),
+  professional_ids: z
+    .array(z.string().uuid())
+    .min(1, "Selecione pelo menos uma profissional")
+    .optional(),
   billing: createBillingSchema.omit({ patient_id: true }).optional(),
 });
 

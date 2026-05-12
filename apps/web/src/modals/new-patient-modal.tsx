@@ -2,21 +2,30 @@
 import { addPatientAction } from "@/actions/add-patient-action";
 import { lookupCepAction } from "@/actions/lookup-cep-action";
 import { CurrencyInput } from "@/components/billing/currency-input";
+import {
+  calculateInstallmentAmount,
+  calculateInstallmentDates,
+  formatCurrency,
+} from "@/lib/billing/calculations";
 import { ESTADOS_BR } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { type CreatePatientInput, createPatientSchema } from "@/lib/validations/patient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputMask } from "@react-input/mask";
+import { Avatar, AvatarFallback, AvatarImage } from "@ventre/ui/avatar";
+import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@ventre/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import dayjs from "dayjs";
-import { Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Pencil, Shield, Users, X } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
-import { useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -24,6 +33,7 @@ type Professional = {
   id: string;
   name?: string | null;
   professional_type?: string | null;
+  avatar_url?: string | null;
 };
 
 const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
@@ -31,6 +41,71 @@ const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
   enfermeiro: "Enfermeira",
   doula: "Doula",
 };
+
+function getInitials(name: string | null | undefined): string {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+const STEPS = [
+  { n: 1, label: "Gestante" },
+  { n: 2, label: "Contato" },
+  { n: 3, label: "Endereço" },
+  { n: 4, label: "Equipe" },
+  { n: 5, label: "Cobrança" },
+] as const;
+
+type StepNumber = (typeof STEPS)[number]["n"];
+
+function StepIndicator({ current }: { current: StepNumber }) {
+  return (
+    <div className="mb-8 flex items-center justify-center">
+      {STEPS.map(({ n, label }, i) => {
+        const done = current > n;
+        const active = current === n;
+        return (
+          <Fragment key={n}>
+            <div className="relative">
+              <div
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-full font-medium text-sm transition-colors",
+                  done && "bg-primary text-white",
+                  active && "border-2 border-primary text-primary",
+                  !done &&
+                    !active &&
+                    "border-2 border-muted-foreground/30 text-muted-foreground/50",
+                )}
+              >
+                {done ? <Check className="h-4 w-4" /> : n}
+              </div>
+              <span
+                className={cn(
+                  "-translate-x-1/2 absolute top-9 left-1/2 whitespace-nowrap text-[10px]",
+                  active ? "font-medium text-primary" : "text-muted-foreground/60",
+                )}
+              >
+                {label}
+              </span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div
+                className={cn(
+                  "h-px w-8 transition-colors",
+                  done ? "bg-primary" : "bg-muted-foreground/20",
+                )}
+              />
+            )}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
 
 type NewPatientModalProps = {
   showModal: boolean;
@@ -47,8 +122,13 @@ export default function NewPatientModal({
   setShowModal,
   onSuccess,
 }: NewPatientModalProps) {
+  const [step, setStep] = useState<StepNumber>(1);
   const [addressVisible, setAddressVisible] = useState(false);
   const [showBilling, setShowBilling] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
+  const [profAmounts, setProfAmounts] = useState<Record<string, number>>({});
+  const [isCustomInterval, setIsCustomInterval] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const { execute: lookupCep, status: cepStatus } = useAction(lookupCepAction, {
     onSuccess: ({ data }) => {
@@ -61,6 +141,7 @@ export default function NewPatientModal({
     },
     onError: () => {
       toast.error("CEP não encontrado");
+      setAddressVisible(true);
     },
   });
 
@@ -70,8 +151,11 @@ export default function NewPatientModal({
     onSuccess: () => {
       toast.success("Paciente cadastrada com sucesso!");
       form.reset();
+      setStep(1);
       setAddressVisible(false);
       setShowBilling(false);
+      setProfAmounts({});
+      setIsCustomInterval(false);
       onSuccess?.();
       setShowModal(false);
     },
@@ -85,6 +169,8 @@ export default function NewPatientModal({
 
   const isSubmitting = status === "executing";
   const showProfessionalSelector = professionalsOptions.length > 0;
+
+  const defaultProfessionalIds = professional?.id ? [professional.id] : undefined;
 
   const form = useForm<CreatePatientInput>({
     resolver: zodResolver(createPatientSchema),
@@ -104,12 +190,105 @@ export default function NewPatientModal({
       state: "",
       zipcode: "",
       observations: "",
-      professional_id: professional?.id ?? undefined,
+      professional_ids: defaultProfessionalIds,
     },
   });
 
+  const selectedProfessionalIds = form.watch("professional_ids") ?? [];
+  const isSplitBilling = showProfessionalSelector && selectedProfessionalIds.length > 1;
+  const splitBillingTotal = Object.values(profAmounts).reduce((a, b) => a + b, 0);
+
+  const billingInstallmentCount = form.watch("billing.installment_count") ?? 1;
+  const billingInstallmentInterval = form.watch("billing.installment_interval");
+  const billingFirstDueDate = form.watch("billing.first_due_date");
+  const billingTotalAmount = isSplitBilling
+    ? splitBillingTotal
+    : (form.watch("billing.total_amount") ?? 0);
+
+  const installmentAmounts = useMemo(
+    () => calculateInstallmentAmount(billingTotalAmount, billingInstallmentCount),
+    [billingTotalAmount, billingInstallmentCount],
+  );
+
+  const previewDates = useMemo<string[]>(() => {
+    if (
+      isCustomInterval ||
+      !billingFirstDueDate ||
+      !billingInstallmentInterval ||
+      billingInstallmentCount <= 1
+    ) {
+      return [];
+    }
+    return calculateInstallmentDates(
+      billingFirstDueDate,
+      billingInstallmentCount,
+      billingInstallmentInterval,
+    ).slice(1);
+  }, [isCustomInterval, billingFirstDueDate, billingInstallmentInterval, billingInstallmentCount]);
+
+  // Keep profAmounts in sync with the selected professionals
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync
+  useEffect(() => {
+    if (!showBilling || !isSplitBilling) return;
+    setProfAmounts((prev) => {
+      const next: Record<string, number> = {};
+      for (const id of selectedProfessionalIds) {
+        next[id] = prev[id] ?? 0;
+      }
+      return next;
+    });
+  }, [JSON.stringify(selectedProfessionalIds), showBilling, isSplitBilling]);
+
+  // Clear total_amount when split billing is active (Zod rejects 0 as non-positive)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional sync
+  useEffect(() => {
+    if (!showBilling) return;
+    if (isSplitBilling) {
+      form.setValue("billing.total_amount", undefined as unknown as number);
+    } else {
+      const current = form.getValues("billing.total_amount");
+      if (!current) form.setValue("billing.total_amount", 0);
+    }
+  }, [isSplitBilling, showBilling]);
+
+  // Adjust installments_dates length when count changes in custom mode
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
+  useEffect(() => {
+    if (!isCustomInterval) return;
+    const current = form.getValues("billing.installments_dates") ?? [];
+    const next = Array.from({ length: billingInstallmentCount }, (_, i) => current[i] ?? "");
+    form.setValue("billing.installments_dates", next);
+  }, [billingInstallmentCount, isCustomInterval]);
+
+  function switchToCustom(seedDates?: string[]) {
+    const first = form.getValues("billing.first_due_date") ?? "";
+    const interval = form.getValues("billing.installment_interval") ?? 1;
+    const count = form.getValues("billing.installment_count") ?? 1;
+    const dates =
+      seedDates ??
+      (first
+        ? calculateInstallmentDates(first, count, interval as number)
+        : Array.from({ length: count }, () => ""));
+    setIsCustomInterval(true);
+    form.setValue("billing.installment_interval", null);
+    form.setValue("billing.first_due_date", null);
+    form.setValue("billing.installments_dates", dates);
+  }
+
+  function handleBillingIntervalChange(value: string) {
+    if (value === "custom") {
+      switchToCustom();
+    } else {
+      setIsCustomInterval(false);
+      form.setValue("billing.installment_interval", Number(value));
+      form.setValue("billing.installments_dates", []);
+    }
+  }
+
   function toggleBilling(enabled: boolean) {
     setShowBilling(enabled);
+    setProfAmounts({});
+    setIsCustomInterval(false);
     if (enabled) {
       form.setValue("billing", {
         description: "",
@@ -117,7 +296,8 @@ export default function NewPatientModal({
         payment_method: undefined as unknown,
         installment_count: 1,
         installment_interval: 1,
-        first_due_date: "",
+        first_due_date: new Date().toISOString().split("T")[0],
+        installments_dates: [],
         notes: "",
       } as CreatePatientInput["billing"]);
     } else {
@@ -125,515 +305,944 @@ export default function NewPatientModal({
     }
   }
 
+  const STEP_FIELDS: Partial<Record<StepNumber, (keyof CreatePatientInput)[]>> = {
+    1: ["name", "due_date", "dum"],
+    2: ["phone"],
+    4: showProfessionalSelector ? ["professional_ids"] : [],
+  };
+
+  async function goToNext() {
+    const fields = STEP_FIELDS[step];
+    if (fields && fields.length > 0) {
+      const valid = await form.trigger(fields);
+      if (!valid) return;
+    }
+    setIsNavigating(true);
+    setStep((prev) => Math.min(prev + 1, 5) as StepNumber);
+    setTimeout(() => setIsNavigating(false), 400);
+  }
+
+  function goToPrev() {
+    setStep((prev) => Math.max(prev - 1, 1) as StepNumber);
+  }
+
   function onSubmit(data: CreatePatientInput) {
+    if (showBilling && isSplitBilling && data.billing) {
+      if (Object.keys(profAmounts).length === 0) {
+        toast.error("Informe os valores para cada profissional.");
+        return;
+      }
+      if (Object.values(profAmounts).some((v) => v <= 0)) {
+        toast.error("Todos os valores das profissionais devem ser maiores que zero.");
+        return;
+      }
+      execute({
+        ...data,
+        billing: {
+          ...data.billing,
+          total_amount: undefined,
+          splitted_billing: profAmounts,
+          installment_interval: isCustomInterval ? null : data.billing.installment_interval,
+          first_due_date: isCustomInterval ? null : data.billing.first_due_date,
+        },
+      });
+      return;
+    }
+    if (showBilling && data.billing) {
+      execute({
+        ...data,
+        billing: {
+          ...data.billing,
+          installment_interval: isCustomInterval ? null : data.billing.installment_interval,
+          first_due_date: isCustomInterval ? null : data.billing.first_due_date,
+        },
+      });
+      return;
+    }
     execute(data);
+  }
+
+  function resetModal() {
+    form.reset();
+    setStep(1);
+    setAddressVisible(false);
+    setShowBilling(false);
+    setProfAmounts({});
+    setIsCustomInterval(false);
+    setIsNavigating(false);
   }
 
   return (
     <ContentModal
       open={showModal}
       onOpenChange={(open) => {
-        if (!open) {
-          form.reset();
-          setAddressVisible(false);
-          setShowBilling(false);
-        }
+        if (!open) resetModal();
         setShowModal(open);
       }}
       title="Nova Gestante"
-      description="Preencha os dados da gestante. O profissional selecionado será adicionado automaticamente como membro da equipe."
+      description=""
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {showProfessionalSelector && (
-            <FormField
-              control={form.control}
-              name="professional_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profissional responsável</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o profissional" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {professionalsOptions?.map((prof) => (
-                        <SelectItem key={prof.id} value={prof.id}>
-                          {prof.name ?? "Sem nome"}{" "}
-                          {prof.professional_type
-                            ? `(${PROFESSIONAL_TYPE_LABELS[prof.professional_type] ?? prof.professional_type})`
-                            : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && step < 5) e.preventDefault();
+          }}
+          className="space-y-6"
+        >
+          <StepIndicator current={step} />
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome completo *</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome da paciente" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="min-h-[400px]">
+            {/* ── Step 1: Dados da Gestante ── */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome completo *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome da paciente" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="partner_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do parceiro</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome do parceiro" {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="partner_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do parceiro</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome do parceiro"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="baby_name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do bebê</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Nome escolhido para o bebê"
-                    {...field}
-                    value={field.value ?? ""}
+                <FormField
+                  control={form.control}
+                  name="baby_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do bebê</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome escolhido para o bebê"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="due_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Data prevista do parto (DPP) *</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                            onChange={(date) => {
+                              field.onChange(date ? date.toISOString().slice(0, 10) : "");
+                              if (date) {
+                                form.setValue(
+                                  "dum",
+                                  dayjs(date).subtract(280, "day").format("YYYY-MM-DD"),
+                                );
+                              } else {
+                                form.setValue("dum", "");
+                              }
+                            }}
+                            placeholderText="Selecione a data"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                  <FormField
+                    control={form.control}
+                    name="dum"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Última menstruação (DUM)</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
+                            onChange={(date) =>
+                              field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                            }
+                            placeholderText="Calculado automaticamente"
+                            disabled
+                            className="bg-muted"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="observations"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Informações adicionais sobre a paciente"
+                          rows={3}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             )}
-          />
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="email@exemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* ── Step 2: Contato ── */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="email@exemplo.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone *</FormLabel>
-                  <FormControl>
-                    <InputMask
-                      component={Input}
-                      placeholder="(99) 99999-9999"
-                      mask="(__) _____-____"
-                      replacement={{ _: /\d/ }}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone *</FormLabel>
+                      <FormControl>
+                        <InputMask
+                          component={Input}
+                          placeholder="(99) 99999-9999"
+                          mask="(__) _____-____"
+                          replacement={{ _: /\d/ }}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="due_date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data prevista do parto (DPP) *</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => {
-                        field.onChange(date ? date.toISOString().slice(0, 10) : "");
-                        if (date) {
-                          form.setValue("dum", dayjs(date).subtract(280, "day").format("YYYY-MM-DD"));
-                        } else {
-                          form.setValue("dum", "");
-                        }
-                      }}
-                      placeholderText="Selecione a data"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="dum"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Última menstruação (DUM)</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
-                      placeholderText="Calculado automaticamente"
-                      disabled
-                      className="bg-muted"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <FormField
-              control={form.control}
-              name="zipcode"
-              render={({ field }) => (
-                <FormItem className="sm:col-span-1">
-                  <FormLabel>CEP</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <InputMask
-                        component={Input}
-                        mask="_____-___"
-                        replacement={{ _: /\d/ }}
-                        placeholder="00000-000"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          const digits = e.target.value.replace(/\D/g, "");
-                          if (digits.length === 8) {
-                            lookupCep({ cep: digits });
-                          }
-                          if (digits.length < 8) {
-                            setAddressVisible(false);
-                          }
-                        }}
-                      />
-                      {isFetchingCep && (
-                        <div className="absolute inset-y-0 right-3 flex items-center">
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            {/* ── Step 3: Endereço ── */}
+            {step === 3 && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="zipcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <InputMask
+                            component={Input}
+                            mask="_____-___"
+                            replacement={{ _: /\d/ }}
+                            placeholder="00000-000"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              const digits = e.target.value.replace(/\D/g, "");
+                              if (digits.length === 8) {
+                                lookupCep({ cep: digits });
+                              }
+                              if (digits.length < 8) {
+                                setAddressVisible(false);
+                              }
+                            }}
+                          />
+                          {isFetchingCep && (
+                            <div className="absolute inset-y-0 right-3 flex items-center">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {addressVisible && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Estado</FormLabel>
-                      <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {ESTADOS_BR.map((estado) => (
-                            <SelectItem key={estado.sigla} value={estado.sigla}>
-                              {estado.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem className="sm:col-span-2">
-                      <FormLabel>Cidade</FormLabel>
-                      <FormControl>
-                        <Input placeholder="São Paulo" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={form.control}
-                name="street"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rua</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Rua das Flores" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="complement"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Complemento</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Apto 45" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="neighborhood"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Bairro</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Centro" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </>
-          )}
-
-          <FormField
-            control={form.control}
-            name="observations"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Observações</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Informações adicionais sobre a paciente"
-                    rows={4}
-                    {...field}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado</FormLabel>
+                        <Select
+                          value={field.value ?? undefined}
+                          onValueChange={field.onChange}
+                          disabled={!addressVisible}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ESTADOS_BR.map((estado) => (
+                              <SelectItem key={estado.sigla} value={estado.sigla}>
+                                {estado.sigla}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem className="sm:col-span-2">
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input placeholder="São Paulo" disabled={!addressVisible} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-          <div className="border-t pt-2">
-            <button
-              type="button"
-              onClick={() => toggleBilling(!showBilling)}
-              className="flex w-full items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
-            >
-              <span className="font-medium">
-                {showBilling ? "− Remover dados de pagamento" : "+ Adicionar dados de pagamentos"}
-              </span>
-            </button>
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rua</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua das Flores" disabled={!addressVisible} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123" disabled={!addressVisible} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="complement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Complemento</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Apto 45" disabled={!addressVisible} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bairro</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Centro" disabled={!addressVisible} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 4: Equipe ── */}
+            {step === 4 && (
+              <div className="space-y-4">
+                {showProfessionalSelector ? (
+                  <FormField
+                    control={form.control}
+                    name="professional_ids"
+                    render={({ field, fieldState }) => {
+                      const selectedIds: string[] = field.value ?? [];
+                      const hasError = !!fieldState.error && selectedIds.length === 0;
+                      const selectedProfessionals = selectedIds
+                        .map((id) => professionalsOptions.find((p) => p.id === id))
+                        .filter(Boolean) as Professional[];
+
+                      function toggleProfessional(id: string) {
+                        const current = field.value ?? [];
+                        if (current.includes(id)) {
+                          field.onChange(current.filter((x) => x !== id));
+                        } else {
+                          field.onChange([...current, id]);
+                        }
+                      }
+
+                      function removeProfessional(id: string) {
+                        field.onChange((field.value ?? []).filter((x) => x !== id));
+                      }
+
+                      function makeResponsible(id: string) {
+                        const current = field.value ?? [];
+                        if (current[0] === id) return;
+                        field.onChange([id, ...current.filter((x) => x !== id)]);
+                      }
+
+                      return (
+                        <FormItem>
+                          <FormLabel>Profissionais responsáveis</FormLabel>
+
+                          <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "flex h-10 w-full items-center gap-2 rounded-full border bg-background px-3 text-sm transition-colors hover:bg-muted/40",
+                                    selectedIds.length > 0 && "border-primary/40",
+                                    hasError && "border-destructive",
+                                  )}
+                                >
+                                  <div className="-ml-1 flex size-6 items-center justify-center rounded-full bg-muted">
+                                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "flex-1 text-left",
+                                      selectedIds.length === 0 && "text-muted-foreground",
+                                    )}
+                                  >
+                                    {selectedIds.length === 0
+                                      ? "Selecione as profissionais"
+                                      : selectedIds.length === 1
+                                        ? "1 profissional selecionada"
+                                        : `${selectedIds.length} profissionais selecionadas`}
+                                  </span>
+                                  <ChevronDown
+                                    className={cn(
+                                      "h-4 w-4 text-muted-foreground transition-transform",
+                                      selectorOpen && "rotate-180",
+                                    )}
+                                  />
+                                </button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              align="start"
+                              className="w-[var(--radix-popover-trigger-width)] p-2"
+                            >
+                              <div className="flex flex-col gap-1">
+                                {professionalsOptions.map((prof) => {
+                                  const isSelected = selectedIds.includes(prof.id);
+                                  return (
+                                    <button
+                                      key={prof.id}
+                                      type="button"
+                                      onClick={() => toggleProfessional(prof.id)}
+                                      className={cn(
+                                        "flex items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-muted/60",
+                                        isSelected && "bg-primary/5",
+                                      )}
+                                    >
+                                      <Avatar className="h-9 w-9 shrink-0 shadow-md">
+                                        <AvatarImage
+                                          src={prof.avatar_url ?? undefined}
+                                          alt={prof.name ?? ""}
+                                          className="rounded-full object-cover"
+                                        />
+                                        <AvatarFallback
+                                          className={cn(
+                                            "text-sm",
+                                            isSelected
+                                              ? "bg-primary/20 text-primary"
+                                              : "bg-primary/10 text-primary",
+                                          )}
+                                        >
+                                          {getInitials(prof.name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0 flex-1">
+                                        <p
+                                          className={cn(
+                                            "truncate font-medium text-sm",
+                                            isSelected && "text-primary",
+                                          )}
+                                        >
+                                          {prof.name ?? "—"}
+                                        </p>
+                                        <p className="text-muted-foreground text-xs">
+                                          {prof.professional_type
+                                            ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                              prof.professional_type)
+                                            : "Profissional"}
+                                        </p>
+                                      </div>
+                                      {isSelected && (
+                                        <Check className="h-4 w-4 shrink-0 text-primary" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+
+                          {selectedProfessionals.length > 0 && (
+                            <div className="flex flex-col gap-2 pt-1">
+                              {selectedProfessionals.map((prof, index) => {
+                                const isResponsible = index === 0;
+                                return (
+                                  <div
+                                    key={prof.id}
+                                    className={cn(
+                                      "flex items-center gap-1 rounded-xl border transition-colors",
+                                      isResponsible
+                                        ? "border-primary/30 bg-primary/5"
+                                        : "border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5",
+                                    )}
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() => makeResponsible(prof.id)}
+                                      disabled={isResponsible}
+                                      className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left disabled:cursor-default"
+                                    >
+                                      <Avatar className="h-9 w-9 shrink-0 shadow-sm">
+                                        <AvatarImage
+                                          src={prof.avatar_url ?? undefined}
+                                          alt={prof.name ?? ""}
+                                          className="rounded-full object-cover"
+                                        />
+                                        <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                          {getInitials(prof.name)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2">
+                                          <p className="truncate font-medium text-sm">
+                                            {prof.name ?? "—"}
+                                          </p>
+                                          {isResponsible ? (
+                                            <Badge
+                                              variant="outline"
+                                              className="shrink-0 border-primary/40 bg-primary/10 px-1.5 py-0 text-primary text-xs"
+                                            >
+                                              <Shield className="mr-1 h-3 w-3" />
+                                              Responsável
+                                            </Badge>
+                                          ) : (
+                                            <span className="shrink-0 text-muted-foreground text-xs">
+                                              Clique para tornar responsável
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-muted-foreground text-xs">
+                                          {prof.professional_type
+                                            ? (PROFESSIONAL_TYPE_LABELS[prof.professional_type] ??
+                                              prof.professional_type)
+                                            : "Profissional"}
+                                        </p>
+                                      </div>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeProfessional(prof.id)}
+                                      className="mr-2 rounded-full p-1 hover:bg-muted"
+                                    >
+                                      <X className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ) : (
+                  <p className="text-center text-muted-foreground text-sm">
+                    Nenhuma profissional disponível para seleção.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Step 5: Cobrança ── */}
+            {step === 5 && (
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => toggleBilling(!showBilling)}
+                  className="flex w-full items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm transition-colors hover:border-primary hover:text-primary"
+                >
+                  <span className="font-medium">
+                    {showBilling
+                      ? "− Remover dados de pagamento"
+                      : "+ Adicionar dados de pagamento"}
+                  </span>
+                </button>
+
+                {showBilling && (
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="billing.description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Acompanhamento pré-natal" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {isSplitBilling ? (
+                      <div className="space-y-2">
+                        <FormLabel>Profissionais e Valores *</FormLabel>
+                        {selectedProfessionalIds.map((profId) => {
+                          const prof = professionalsOptions.find((p) => p.id === profId);
+                          return (
+                            <div key={profId} className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8 shrink-0">
+                                <AvatarImage
+                                  src={prof?.avatar_url ?? undefined}
+                                  alt={prof?.name ?? ""}
+                                  className="rounded-full object-cover"
+                                />
+                                <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                                  {getInitials(prof?.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="min-w-0 flex-1 truncate text-sm">
+                                {prof?.name ?? profId}
+                              </span>
+                              <CurrencyInput
+                                value={profAmounts[profId] ?? 0}
+                                onChange={(val) =>
+                                  setProfAmounts((prev) => ({ ...prev, [profId]: val }))
+                                }
+                              />
+                            </div>
+                          );
+                        })}
+                        {splitBillingTotal > 0 && (
+                          <p className="text-right text-muted-foreground text-xs">
+                            Total: {formatCurrency(splitBillingTotal)}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="billing.total_amount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor Total *</FormLabel>
+                            <FormControl>
+                              <CurrencyInput value={field.value ?? 0} onChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="billing.payment_method"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Método de Pagamento *</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o método" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pix">PIX</SelectItem>
+                              <SelectItem value="credito">Cartão de Crédito</SelectItem>
+                              <SelectItem value="debito">Cartão de Débito</SelectItem>
+                              <SelectItem value="boleto">Boleto</SelectItem>
+                              <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                              <SelectItem value="outro">Outro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField
+                        control={form.control}
+                        name="billing.installment_count"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Parcelas *</FormLabel>
+                            <Select
+                              value={String(field.value ?? 1)}
+                              onValueChange={(v) => field.onChange(Number(v))}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                                  <SelectItem key={n} value={String(n)}>
+                                    {n}x
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormItem>
+                        <FormLabel>Intervalo *</FormLabel>
+                        <Select
+                          value={
+                            isCustomInterval ? "custom" : String(billingInstallmentInterval ?? "")
+                          }
+                          onValueChange={handleBillingIntervalChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Mensal</SelectItem>
+                            <SelectItem value="2">Bimestral</SelectItem>
+                            <SelectItem value="3">Trimestral</SelectItem>
+                            <SelectItem value="4">Quadrimestral</SelectItem>
+                            <SelectItem value="custom">Personalizado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    </div>
+
+                    {!isCustomInterval && (
+                      <div className="space-y-2">
+                        <FormLabel>Datas de vencimento</FormLabel>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                              Parcela 1
+                            </span>
+                            <FormField
+                              control={form.control}
+                              name="billing.first_due_date"
+                              render={({ field }) => (
+                                <FormItem className="flex-1">
+                                  <FormControl>
+                                    <DatePicker
+                                      selected={
+                                        field.value ? new Date(`${field.value}T00:00:00`) : null
+                                      }
+                                      onChange={(date) =>
+                                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                                      }
+                                      placeholderText="Selecione a data"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <span className="w-20 shrink-0 text-right text-sm">
+                              {formatCurrency(installmentAmounts[0] ?? 0)}
+                            </span>
+                          </div>
+
+                          {previewDates.map((date, i) => (
+                            <div
+                              key={date || `preview-${i + 2}`}
+                              className="flex items-center gap-3"
+                            >
+                              <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                                Parcela {i + 2}
+                              </span>
+                              <div className="relative flex-1">
+                                <DatePicker
+                                  selected={date ? new Date(`${date}T00:00:00`) : null}
+                                  onChange={() => undefined}
+                                  disabled
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => switchToCustom()}
+                                  className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
+                                  title="Editar datas manualmente"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                              <span className="w-20 shrink-0 text-right text-sm">
+                                {formatCurrency(installmentAmounts[i + 1] ?? 0)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {isCustomInterval && (
+                      <div className="space-y-2">
+                        <FormLabel>Datas de vencimento</FormLabel>
+                        <div className="space-y-2">
+                          {Array.from({ length: billingInstallmentCount }, (_, i) => (
+                            <div key={`custom-date-${i + 1}`} className="flex items-center gap-3">
+                              <span className="w-20 shrink-0 text-muted-foreground text-xs">
+                                Parcela {i + 1}
+                              </span>
+                              <FormField
+                                control={form.control}
+                                name={
+                                  `billing.installments_dates.${i}` as "billing.installments_dates"
+                                }
+                                render={({ field }) => (
+                                  <FormItem className="flex-1">
+                                    <FormControl>
+                                      <DatePicker
+                                        selected={
+                                          field.value ? new Date(`${field.value}T00:00:00`) : null
+                                        }
+                                        onChange={(date) =>
+                                          field.onChange(
+                                            date ? date.toISOString().slice(0, 10) : "",
+                                          )
+                                        }
+                                        placeholderText="Selecione a data"
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <span className="w-20 shrink-0 text-right text-sm">
+                                {formatCurrency(installmentAmounts[i] ?? 0)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="billing.notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Observações da cobrança</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Notas sobre a cobrança" rows={2} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {showBilling && (
-            <div className="space-y-4 rounded-md border p-4">
-              <p className="font-medium text-sm">Dados da Cobrança</p>
+          {/* ── Navigation ── */}
+          <div className="flex gap-2 pt-2">
+            {step > 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={goToPrev}
+                disabled={isSubmitting}
+              >
+                Voltar
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowModal(false)}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+            )}
 
-              <FormField
-                control={form.control}
-                name="billing.description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Acompanhamento pré-natal" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="billing.total_amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Total *</FormLabel>
-                    <FormControl>
-                      <CurrencyInput value={field.value ?? 0} onChange={field.onChange} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="billing.payment_method"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Método de Pagamento *</FormLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o método" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="credito">Cartão de Crédito</SelectItem>
-                        <SelectItem value="debito">Cartão de Débito</SelectItem>
-                        <SelectItem value="boleto">Boleto</SelectItem>
-                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="billing.installment_count"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Parcelas *</FormLabel>
-                      <Select
-                        value={String(field.value ?? 1)}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                            <SelectItem key={n} value={String(n)}>
-                              {n}x
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="billing.installment_interval"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Intervalo *</FormLabel>
-                      <Select
-                        value={String(field.value ?? 1)}
-                        onValueChange={(v) => field.onChange(Number(v))}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="1">Mensal</SelectItem>
-                          <SelectItem value="2">Bimestral</SelectItem>
-                          <SelectItem value="3">Trimestral</SelectItem>
-                          <SelectItem value="4">Quadrimestral</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="billing.first_due_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vencimento da 1ª parcela *</FormLabel>
-                    <FormControl>
-                      <DatePicker
-                        selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                        onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
-                        placeholderText="Selecione a data"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="billing.notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observações da cobrança</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Notas sobre a cobrança" rows={2} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowModal(false)}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" className="gradient-primary" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Cadastrar Paciente
-            </Button>
+            {step < 5 ? (
+              <Button
+                type="button"
+                className="gradient-primary flex-1"
+                onClick={goToNext}
+                disabled={isSubmitting}
+              >
+                Próximo
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                className="gradient-primary flex-1"
+                disabled={isSubmitting || isNavigating}
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Cadastrar Paciente
+              </Button>
+            )}
           </div>
         </form>
       </Form>
