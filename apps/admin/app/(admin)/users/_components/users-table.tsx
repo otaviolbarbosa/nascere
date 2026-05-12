@@ -98,17 +98,17 @@ export function UsersTable() {
                   type="button"
                   className="group flex w-fit items-center gap-1 text-left text-[10px] text-muted-foreground hover:text-foreground"
                   onClick={() => {
-                    navigator.clipboard.writeText(user.id);
-                    toast.success("ID copiado!");
+                    navigator.clipboard.writeText(user.email);
+                    toast.success("Email copiado!");
                   }}
                 >
-                  <span>#{user.id}</span>
+                  <span>{user.email}</span>
                   <Copy className="size-2.5 transition-opacity md:opacity-0 md:group-hover:opacity-100" />
                 </button>
               </div>
             ),
           },
-          { label: "E-mail", name: "email" },
+          // { label: "E-mail", name: "email" },
           {
             label: "Tipo",
             name: "user_type",
@@ -146,7 +146,7 @@ export function UsersTable() {
             callback: (user) => formatDate(user.created_at),
           },
           {
-            label: "Confirmado?",
+            label: "Ativo?",
             name: "email_confirmed",
             callback: (user) =>
               user.email_confirmed ? (
