@@ -158,16 +158,21 @@ export async function createPatient(
   userId: string,
   data: CreatePatientInput,
 ) {
-  // Determine which professional will own this patient
-  const targetProfessionalId = data.professional_id ?? userId;
+  // First selected professional (or the creator) is the responsible professional
+  const professionalIds =
+    data.professional_ids && data.professional_ids.length > 0
+      ? data.professional_ids
+      : [userId];
+  // professionalIds always has at least one element (userId fallback above)
+  const responsibleProfessionalId = professionalIds[0] as string;
 
-  const { data: profile } = await supabaseAdmin
+  const { data: responsibleProfile } = await supabaseAdmin
     .from("users")
     .select("user_type, professional_type")
-    .eq("id", targetProfessionalId)
+    .eq("id", responsibleProfessionalId)
     .single();
 
-  if (profile?.user_type !== "professional") {
+  if (responsibleProfile?.user_type !== "professional") {
     throw new Error("Apenas profissionais podem ser responsáveis por pacientes");
   }
 
@@ -183,7 +188,7 @@ export async function createPatient(
     city: data.city,
     state: data.state,
     zipcode: data.zipcode,
-    created_by: targetProfessionalId,
+    created_by: responsibleProfessionalId,
   };
 
   const { data: patient, error: patientError } = await supabaseAdmin
@@ -201,7 +206,7 @@ export async function createPatient(
     patient_id: patient.id,
     due_date: data.due_date,
     dum: data.dum,
-    created_by: targetProfessionalId,
+    created_by: responsibleProfessionalId,
     baby_name: data.baby_name || null,
     observations: data.observations,
   } satisfies TablesInsert<"pregnancies">);
@@ -211,16 +216,27 @@ export async function createPatient(
     throw new Error(pregnancyError.message);
   }
 
-  if (profile.professional_type) {
-    const { error: teamError } = await supabaseAdmin.from("team_members").insert({
-      patient_id: patient.id,
-      professional_id: targetProfessionalId,
-      professional_type: profile.professional_type,
-    } satisfies TablesInsert<"team_members">);
+  // Fetch profiles for all selected professionals and add them as team members
+  const { data: profProfiles } = await supabaseAdmin
+    .from("users")
+    .select("id, professional_type")
+    .in("id", professionalIds);
 
-    if (teamError) {
-      await supabaseAdmin.from("patients").delete().eq("id", patient.id);
-      throw new Error(teamError.message);
+  const profProfileMap = new Map((profProfiles ?? []).map((p) => [p.id, p]));
+
+  for (const profId of professionalIds) {
+    const prof = profProfileMap.get(profId);
+    if (prof?.professional_type) {
+      const { error: teamError } = await supabaseAdmin.from("team_members").insert({
+        patient_id: patient.id,
+        professional_id: profId,
+        professional_type: prof.professional_type,
+      } satisfies TablesInsert<"team_members">);
+
+      if (teamError) {
+        await supabaseAdmin.from("patients").delete().eq("id", patient.id);
+        throw new Error(teamError.message);
+      }
     }
   }
 

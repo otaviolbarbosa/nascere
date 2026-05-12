@@ -11,23 +11,25 @@ import { revalidateTag } from "next/cache";
 export const addPatientAction = authActionClient
   .inputSchema(createPatientSchema)
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
-    // When creating on behalf of a professional, verify they belong to the same enterprise
-    if (parsedInput.professional_id) {
-      const isSelf = parsedInput.professional_id === profile.id;
+    // Validate all selected professionals belong to the same enterprise
+    if (parsedInput.professional_ids && parsedInput.professional_ids.length > 0) {
+      for (const profId of parsedInput.professional_ids) {
+        const isSelf = profId === profile.id;
 
-      if (!isStaff(profile) && !isSelf) {
-        throw new Error("Sem permissão para criar pacientes em nome de outro profissional.");
-      }
+        if (!isStaff(profile) && !isSelf) {
+          throw new Error("Sem permissão para criar pacientes em nome de outro profissional.");
+        }
 
-      if (!isSelf) {
-        const { data: targetProfessional } = await supabase
-          .from("users")
-          .select("enterprise_id")
-          .eq("id", parsedInput.professional_id)
-          .single();
+        if (!isSelf) {
+          const { data: targetProfessional } = await supabase
+            .from("users")
+            .select("enterprise_id")
+            .eq("id", profId)
+            .single();
 
-        if (targetProfessional?.enterprise_id !== profile.enterprise_id) {
-          throw new Error("O profissional selecionado não pertence à sua organização.");
+          if (targetProfessional?.enterprise_id !== profile.enterprise_id) {
+            throw new Error("Um dos profissionais selecionados não pertence à sua organização.");
+          }
         }
       }
     }
