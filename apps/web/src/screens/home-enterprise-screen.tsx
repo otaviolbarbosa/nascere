@@ -231,9 +231,11 @@ function AppointmentTimeline({ appointments }: { appointments: EnterpriseAppoint
                   >
                     {formatDate(appt.date)}, {appt.time.slice(0, 5)}
                   </p>
-                  <p className="font-medium text-sm">{appt.patient.name}</p>
+                  <p className="font-medium text-sm">
+                    {appt.patient?.name ?? appt.external_patient_name ?? "Paciente externa"}
+                  </p>
                   <p className="text-muted-foreground text-xs">
-                    {getTypeLabel(appt.type, appt.patient.pregnancies?.[0]?.dum)}
+                    {getTypeLabel(appt.type, appt.patient?.pregnancies?.[0]?.dum)}
                   </p>
                   <p className="text-muted-foreground text-xs">com {appt.professional.name}</p>
                 </div>

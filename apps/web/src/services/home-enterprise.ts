@@ -162,7 +162,7 @@ export async function getHomeEnterpriseData(): Promise<HomeEnterpriseData> {
     .select(
       `
       *,
-      patient:patients!appointments_patient_id_fkey(id, name, pregnancies(dum)),
+      patient:patients(id, name, pregnancies(dum)),
       professional:users!appointments_professional_id_fkey(id, name)
     `,
     )

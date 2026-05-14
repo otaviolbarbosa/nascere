@@ -9,6 +9,7 @@ import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
+import { Checkbox } from "@ventre/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
 import { Input } from "@ventre/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
@@ -16,6 +17,7 @@ import { ContentModal } from "@ventre/ui/shared/content-modal";
 import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Textarea } from "@ventre/ui/textarea";
+import { InputMask } from "@react-input/mask";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +31,7 @@ type Professional = { id: string; name: string | null };
 const DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
 
 const defaultValues: DefaultValues<CreateAppointmentInput> = {
+  is_external: false,
   patient_id: "",
   date: "",
   time: "",
@@ -36,6 +39,9 @@ const defaultValues: DefaultValues<CreateAppointmentInput> = {
   duration: 60,
   location: "",
   notes: "",
+  external_patient_name: "",
+  external_patient_phone: "",
+  external_patient_email: "",
 };
 
 type NewAppointmentModalProps = {
@@ -88,6 +94,8 @@ export default function NewAppointmentModal({
     resolver: zodResolver(createAppointmentSchema),
     defaultValues: { ...defaultValues, patient_id: patientId },
   });
+
+  const isExternal = form.watch("is_external");
 
   function handleClose() {
     form.reset({ ...defaultValues, patient_id: patientId });
@@ -190,42 +198,121 @@ export default function NewAppointmentModal({
             />
           )}
           {!patientId && (
-            <FormField
-              control={form.control}
-              name="patient_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Paciente</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isStaff && (!selectedProfessionalId || isLoadingPatients)}
-                  >
+            <>
+              <FormField
+                control={form.control}
+                name="is_external"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-2">
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            isLoadingPatients
-                              ? "Carregando pacientes..."
-                              : isStaff && !selectedProfessionalId
-                                ? "Selecione o profissional primeiro"
-                                : "Selecione a paciente"
-                          }
-                        />
-                      </SelectTrigger>
+                      <Checkbox
+                        checked={field.value ?? false}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          form.setValue("patient_id", "");
+                          form.setValue("external_patient_name", "");
+                          form.setValue("external_patient_phone", "");
+                          form.setValue("external_patient_email", "");
+                          form.clearErrors(["patient_id", "external_patient_name"]);
+                        }}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      {patientList.map((patient) => (
-                        <SelectItem key={patient.id} value={patient.id}>
-                          {patient.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+                    <FormLabel className="cursor-pointer font-normal">
+                      Paciente externa (não cadastrada)
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
+              {isExternal ? (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="external_patient_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome da paciente</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Nome completo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="external_patient_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone (opcional)</FormLabel>
+                          <FormControl>
+                            <InputMask
+                              component={Input}
+                              placeholder="(00) 00000-0000"
+                              mask="(__) _____-____"
+                              replacement={{ _: /\d/ }}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="external_patient_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>E-mail (opcional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="email@exemplo.com" type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              ) : (
+                <FormField
+                  control={form.control}
+                  name="patient_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Paciente</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isStaff && (!selectedProfessionalId || isLoadingPatients)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                isLoadingPatients
+                                  ? "Carregando pacientes..."
+                                  : isStaff && !selectedProfessionalId
+                                    ? "Selecione o profissional primeiro"
+                                    : "Selecione a paciente"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {patientList.map((patient) => (
+                            <SelectItem key={patient.id} value={patient.id}>
+                              {patient.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </>
           )}
           <FormField
             control={form.control}

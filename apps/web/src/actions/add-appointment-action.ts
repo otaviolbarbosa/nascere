@@ -11,20 +11,25 @@ export const addAppointmentAction = authActionClient
   .action(async ({ parsedInput, ctx: { supabase, supabaseAdmin, user, profile } }) => {
     const professionalId =
       isStaff(profile) && parsedInput.professional_id ? parsedInput.professional_id : user.id;
-    const appointment = await createAppointment(supabase, professionalId, parsedInput);
+    const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput);
 
     if (profile.enterprise_id) {
-      const { data: patient } = await supabase
-        .from("patients")
-        .select("name")
-        .eq("id", appointment.patient_id)
-        .single();
-
       const isConsulta = parsedInput.type === "consulta";
       const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
       const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
-      const description = patient
-        ? `${typeLabel} para ${patient.name} em ${appointment.date} às ${appointment.time.slice(0, 5)}`
+
+      let patientName: string | null = parsedInput.external_patient_name ?? null;
+      if (!parsedInput.is_external && appointment.patient_id) {
+        const { data: patient } = await supabase
+          .from("patients")
+          .select("name")
+          .eq("id", appointment.patient_id)
+          .single();
+        patientName = patient?.name ?? null;
+      }
+
+      const description = patientName
+        ? `${typeLabel} para ${patientName} em ${appointment.date} às ${appointment.time.slice(0, 5)}`
         : `${typeLabel} agendado para ${appointment.date}`;
 
       insertActivityLog({
@@ -34,7 +39,7 @@ export const addAppointmentAction = authActionClient
         actionType: "appointment",
         userId: user.id,
         enterpriseId: profile.enterprise_id,
-        patientId: appointment.patient_id,
+        patientId: appointment.patient_id ?? undefined,
         metadata: { appointment_id: appointment.id, type: parsedInput.type },
       });
     }

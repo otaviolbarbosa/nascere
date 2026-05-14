@@ -71,7 +71,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .from("appointments")
       .update(updateData)
       .eq("id", id)
-      .select("*, patient:patients!appointments_patient_id_fkey(id, name)")
+      .select("*, patient:patients(id, name)")
       .single();
 
     if (error) {
