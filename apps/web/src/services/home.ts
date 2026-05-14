@@ -183,7 +183,7 @@ async function fetchHomeData(userId: string): Promise<HomeData> {
     .select(
       `
       *,
-      patient:patients!appointments_patient_id_fkey(id, name, pregnancies(dum))
+      patient:patients(id, name, pregnancies(dum))
     `,
     )
     .eq("professional_id", userId)

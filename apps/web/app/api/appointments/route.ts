@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       .from("appointments")
       .select(`
         *,
-        patient:patients!appointments_patient_id_fkey(id, name),
+        patient:patients(id, name),
         professional:users!appointments_professional_id_fkey(name, professional_type)
       `)
       .eq("professional_id", user.id)
@@ -65,8 +65,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error.errors }, { status: 400 });
     }
 
+    const { is_external } = validation.data;
     const insertData: TablesInsert<"appointments"> = {
-      patient_id: validation.data.patient_id,
+      patient_id: is_external ? null : (validation.data.patient_id ?? null),
       professional_id: user.id,
       date: validation.data.date,
       time: validation.data.time,
@@ -74,6 +75,9 @@ export async function POST(request: Request) {
       type: validation.data.type,
       location: validation.data.location,
       notes: validation.data.notes,
+      external_patient_name: is_external ? (validation.data.external_patient_name ?? null) : null,
+      external_patient_phone: is_external ? (validation.data.external_patient_phone ?? null) : null,
+      external_patient_email: is_external ? (validation.data.external_patient_email || null) : null,
     };
 
     const { data: appointment, error } = await supabase
@@ -86,24 +90,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Fire-and-forget: send notification to team
-    const { data: patient } = await supabase
-      .from("patients")
-      .select("name")
-      .eq("id", validation.data.patient_id)
-      .single();
+    // Fire-and-forget: send notification to team (only for registered patients)
+    if (!is_external && validation.data.patient_id) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("name")
+        .eq("id", validation.data.patient_id)
+        .single();
 
-    if (patient) {
-      const template = getNotificationTemplate("appointment_created", {
-        patientName: patient.name,
-        date: validation.data.date,
-        time: validation.data.time,
-      });
-      sendNotificationToTeam(validation.data.patient_id, user.id, {
-        type: "appointment_created",
-        ...template,
-        data: { url: "/appointments" },
-      });
+      if (patient) {
+        const template = getNotificationTemplate("appointment_created", {
+          patientName: patient.name,
+          date: validation.data.date,
+          time: validation.data.time,
+        });
+        sendNotificationToTeam(validation.data.patient_id, user.id, {
+          type: "appointment_created",
+          ...template,
+          data: { url: "/appointments" },
+        });
+      }
     }
 
     return NextResponse.json({ appointment }, { status: 201 });

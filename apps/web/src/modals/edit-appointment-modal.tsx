@@ -9,11 +9,11 @@ import type { AppointmentWithPatient } from "@/services/appointment";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@ventre/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@ventre/ui/form";
-import { DatePicker } from "@ventre/ui/shared/date-picker";
 import { Input } from "@ventre/ui/input";
-import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ventre/ui/select";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
+import { DatePicker } from "@ventre/ui/shared/date-picker";
+import { TimePicker } from "@ventre/ui/shared/time-picker";
 import { Textarea } from "@ventre/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -22,6 +22,12 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 const DURATION_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120];
+
+const PROFESSIONAL_TYPE_LABELS: Record<string, string> = {
+  obstetra: "Obstetra",
+  enfermeiro: "Enfermeiro(a)",
+  doula: "Doula",
+};
 
 type EditAppointmentModalProps = {
   appointment: AppointmentWithPatient;
@@ -79,10 +85,31 @@ export function EditAppointmentModal({
       open={open}
       onOpenChange={(open) => !open && handleClose()}
       title="Editar Agendamento"
-      description={`${appointment.patient?.name ?? "Paciente"}`}
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 rounded-md border bg-muted/40 p-3">
+            <div className="space-y-0.5">
+              <p className="text-xs text-muted-foreground">Gestante</p>
+              <p className="text-sm font-medium">
+                {appointment.patient?.name ?? appointment.external_patient_name ?? "—"}
+              </p>
+              {appointment.external_patient_name && (
+                <p className="text-xs text-muted-foreground">Paciente externa</p>
+              )}
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-xs text-muted-foreground">Profissional</p>
+              <p className="text-sm font-medium">{appointment.professional?.name ?? "—"}</p>
+              {appointment.professional?.professional_type && (
+                <p className="text-xs text-muted-foreground">
+                  {PROFESSIONAL_TYPE_LABELS[appointment.professional.professional_type] ??
+                    appointment.professional.professional_type}
+                </p>
+              )}
+            </div>
+          </div>
+
           <FormField
             control={form.control}
             name="type"
@@ -115,7 +142,9 @@ export function EditAppointmentModal({
                   <FormControl>
                     <DatePicker
                       selected={field.value ? new Date(`${field.value}T00:00:00`) : null}
-                      onChange={(date) => field.onChange(date ? date.toISOString().slice(0, 10) : "")}
+                      onChange={(date) =>
+                        field.onChange(date ? date.toISOString().slice(0, 10) : "")
+                      }
                       placeholderText="Selecione a data"
                     />
                   </FormControl>
@@ -132,8 +161,23 @@ export function EditAppointmentModal({
                   <FormLabel>Horário</FormLabel>
                   <FormControl>
                     <TimePicker
-                      selected={field.value ? (() => { const d = new Date(); const [h, m] = field.value.split(":"); d.setHours(Number(h), Number(m), 0, 0); return d; })() : null}
-                      onChange={(date) => field.onChange(date ? `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}` : "")}
+                      selected={
+                        field.value
+                          ? (() => {
+                              const d = new Date();
+                              const [h, m] = field.value.split(":");
+                              d.setHours(Number(h), Number(m), 0, 0);
+                              return d;
+                            })()
+                          : null
+                      }
+                      onChange={(date) =>
+                        field.onChange(
+                          date
+                            ? `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`
+                            : "",
+                        )
+                      }
                       placeholderText="Selecione o horário"
                     />
                   </FormControl>

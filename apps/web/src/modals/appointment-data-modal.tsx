@@ -7,7 +7,7 @@ import type { AppointmentWithPatient } from "@/services/appointment";
 import { professionalTypeLabels } from "@/utils/team";
 import { Button } from "@ventre/ui/button";
 import { ContentModal } from "@ventre/ui/shared/content-modal";
-import { Clock, MapPin, Pencil, Stethoscope } from "lucide-react";
+import { Clock, MapPin, Pencil, Stethoscope, UserPlus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,12 +18,19 @@ const typeLabels: Record<string, string> = {
   encontro: "Encontro",
 };
 
+export type ExternalPatientValues = {
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
 type AppointmentDataModalProps = {
   appointment: AppointmentWithPatient | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCancel?: VoidFunction;
   onSuccess?: VoidFunction;
+  onRegisterExternalPatient?: (data: ExternalPatientValues) => void;
 };
 
 export function AppointmentDataModal({
@@ -32,6 +39,7 @@ export function AppointmentDataModal({
   onOpenChange,
   onCancel,
   onSuccess,
+  onRegisterExternalPatient,
 }: AppointmentDataModalProps) {
   const { isStaff } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
@@ -59,7 +67,7 @@ export function AppointmentDataModal({
       <ContentModal
         open={open}
         onOpenChange={onOpenChange}
-        title={appointment.patient?.name ?? "Paciente"}
+        title={appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
         description={typeLabels[appointment.type] ?? appointment.type}
       >
         <div className="space-y-4">
@@ -110,6 +118,24 @@ export function AppointmentDataModal({
               </p>
             )}
           </div>
+
+          {appointment.external_patient_name && onRegisterExternalPatient && (
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                onOpenChange(false);
+                onRegisterExternalPatient({
+                  name: appointment.external_patient_name,
+                  email: appointment.external_patient_email,
+                  phone: appointment.external_patient_phone,
+                });
+              }}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Cadastrar como Gestante
+            </Button>
+          )}
 
           {isCancellable && (
             <Button

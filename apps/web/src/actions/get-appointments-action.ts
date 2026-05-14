@@ -16,7 +16,7 @@ export const getAppointmentsAction = authActionClient
       .from("appointments")
       .select(`
         *,
-        patient:patients!appointments_patient_id_fkey(id, name),
+        patient:patients(id, name),
         professional:users!appointments_professional_id_fkey(id, name, professional_type)
       `)
       .order("date", { ascending: true })
