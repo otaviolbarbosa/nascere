@@ -3,7 +3,7 @@
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
-import { AppointmentDataModal } from "@/modals/appointment-data-modal";
+import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
 import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { Button } from "@ventre/ui/button";
@@ -47,6 +47,7 @@ type AppointmentCalendarViewProps = {
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment?: VoidFunction;
   onUpdateAppointments?: VoidFunction;
+  onRegisterExternalPatient?: (data: ExternalPatientValues) => void;
 };
 
 export function AppointmentCalendarView({
@@ -56,6 +57,7 @@ export function AppointmentCalendarView({
   onCancelDay,
   onAddAppointment,
   onUpdateAppointments,
+  onRegisterExternalPatient,
 }: AppointmentCalendarViewProps) {
   const today = dayjs().format("YYYY-MM-DD");
   const [selectedDate, setSelectedDate] = useState(today);
@@ -282,7 +284,7 @@ export function AppointmentCalendarView({
                         <CardContent className="flex h-full flex-col justify-center p-3">
                           <p className="font-medium text-sm">
                             {start.format("HH:mm")} - {endTime} •{" "}
-                            {appointment.patient?.name ?? "Paciente sem nome"}
+                            {appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
                           </p>
                           <p className="text-muted-foreground text-xs">
                             {locationLabel ? `${locationLabel} • ` : ""}
@@ -324,6 +326,7 @@ export function AppointmentCalendarView({
           setSelectedAppointment(null);
           onUpdateAppointments?.();
         }}
+        onRegisterExternalPatient={onRegisterExternalPatient}
       />
     </div>
   );

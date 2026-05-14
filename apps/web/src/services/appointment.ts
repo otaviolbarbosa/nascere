@@ -1,17 +1,18 @@
 import { isStaff } from "@/lib/access-control";
 import { getServerAuth } from "@/lib/server-auth";
 import type { CreateAppointmentInput } from "@/lib/validations/appointment";
-import type { createServerSupabaseClient } from "@ventre/supabase/server";
+import type { createServerSupabaseAdmin, createServerSupabaseClient } from "@ventre/supabase/server";
 import type { Tables, TablesInsert } from "@ventre/supabase/types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
+type SupabaseAdminClient = Awaited<ReturnType<typeof createServerSupabaseAdmin>>;
 
 type Appointment = Tables<"appointments">;
 type Patient = Tables<"patients">;
 type User = Tables<"users">;
 
 export type AppointmentWithPatient = Appointment & {
-  patient: Pick<Patient, "id" | "name">;
+  patient: Pick<Patient, "id" | "name"> | null;
   professional?: Pick<User, "id" | "name" | "professional_type"> | null;
 };
 
@@ -32,7 +33,7 @@ export async function getMyAppointments(): Promise<GetMyAppointmentsResult> {
     .select(
       `
       *,
-      patient:patients!appointments_patient_id_fkey(id, name),
+      patient:patients(id, name),
       professional:users!appointments_professional_id_fkey(id, name, professional_type)
     `,
     )
@@ -49,12 +50,12 @@ export async function getMyAppointments(): Promise<GetMyAppointmentsResult> {
 }
 
 export async function createAppointment(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient | SupabaseAdminClient,
   userId: string,
   data: CreateAppointmentInput,
 ) {
   const insertData: TablesInsert<"appointments"> = {
-    patient_id: data.patient_id,
+    patient_id: data.is_external ? null : data.patient_id,
     professional_id: userId,
     date: data.date,
     time: data.time,
@@ -62,6 +63,9 @@ export async function createAppointment(
     type: data.type,
     location: data.location,
     notes: data.notes,
+    external_patient_name: data.is_external ? (data.external_patient_name ?? null) : null,
+    external_patient_phone: data.is_external ? (data.external_patient_phone ?? null) : null,
+    external_patient_email: data.is_external ? (data.external_patient_email || null) : null,
   };
 
   const { data: appointment, error } = await supabase

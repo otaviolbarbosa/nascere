@@ -9,7 +9,9 @@ import { AppointmentCalendarView } from "@/components/shared/appointment-calenda
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
 import { CalendarSwitcher } from "@/components/shared/calendar-switcher";
 import { ProfessionalsSelector } from "@/components/shared/professionals-selector";
+import type { ExternalPatientValues } from "@/modals/appointment-data-modal";
 import NewAppointmentModal from "@/modals/new-appointment-modal";
+import NewPatientModal from "@/modals/new-patient-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import type { EnterpriseProfessional } from "@/services/professional";
 import type { Tables } from "@ventre/supabase";
@@ -32,6 +34,14 @@ export default function AppointmentsScreen({
   isStaff = false,
 }: AppointmentsScreenProps) {
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [externalPatientInitialValues, setExternalPatientInitialValues] =
+    useState<ExternalPatientValues | null>(null);
+
+  function handleRegisterExternalPatient(data: ExternalPatientValues) {
+    setExternalPatientInitialValues(data);
+    setShowNewPatientModal(true);
+  }
   const [professionalFilter, setProfessionalFilter] = useState<string | null>(null);
   const [agendaView, setAgendaView] = useState<AgendaView>(() => {
     if (typeof window !== "undefined") {
@@ -122,6 +132,7 @@ export default function AppointmentsScreen({
             onUpdateAppointments={() =>
               fetchAppointments({ professionalId: professionalFilter ?? undefined })
             }
+            onRegisterExternalPatient={handleRegisterExternalPatient}
           />
         ) : (
           <AppointmentListView
@@ -133,6 +144,7 @@ export default function AppointmentsScreen({
             onUpdateAppointments={() =>
               fetchAppointments({ professionalId: professionalFilter ?? undefined })
             }
+            onRegisterExternalPatient={handleRegisterExternalPatient}
           />
         )}
       </div>
@@ -143,6 +155,20 @@ export default function AppointmentsScreen({
         professionals={professionals}
         appointments={appointments}
         isStaff={isStaff}
+        onSuccess={() => fetchAppointments({ professionalId: professionalFilter ?? undefined })}
+      />
+      <NewPatientModal
+        showModal={showNewPatientModal}
+        setShowModal={(open) => {
+          setShowNewPatientModal(open);
+          if (!open) setExternalPatientInitialValues(null);
+        }}
+        professionals={professionals}
+        initialValues={{
+          name: externalPatientInitialValues?.name ?? undefined,
+          email: externalPatientInitialValues?.email ?? undefined,
+          phone: externalPatientInitialValues?.phone ?? undefined,
+        }}
         onSuccess={() => fetchAppointments({ professionalId: professionalFilter ?? undefined })}
       />
     </div>

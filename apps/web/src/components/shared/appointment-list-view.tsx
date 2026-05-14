@@ -2,7 +2,7 @@
 import { EmptyState } from "@/components/shared/empty-state";
 import { dayjs } from "@/lib/dayjs";
 import { cn } from "@/lib/utils";
-import { AppointmentDataModal } from "@/modals/appointment-data-modal";
+import { AppointmentDataModal, type ExternalPatientValues } from "@/modals/appointment-data-modal";
 import { CancelDayAppointmentsModal } from "@/modals/cancel-day-appointments-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import { Badge } from "@ventre/ui/badge";
@@ -69,6 +69,7 @@ type AppointmentGroupProps = {
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment?: VoidFunction;
   onUpdateAppointments?: VoidFunction;
+  onRegisterExternalPatient?: (data: ExternalPatientValues) => void;
 };
 
 function AppointmentGroup({
@@ -78,6 +79,7 @@ function AppointmentGroup({
   onCancelDay,
   onAddAppointment,
   onUpdateAppointments,
+  onRegisterExternalPatient,
 }: AppointmentGroupProps) {
   const groupedAppointments = groupAppointmentsByDate(appointments);
   const sortedDates = Object.keys(groupedAppointments).sort((a, b) =>
@@ -152,7 +154,9 @@ function AppointmentGroup({
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center justify-start gap-2">
-                            <span className="font-medium">{appointment.patient.name}</span>
+                            <span className="font-medium">
+                              {appointment.patient?.name ?? appointment.external_patient_name ?? "Paciente externa"}
+                            </span>
                             <Badge variant="outline" className="text-xs">
                               {typeLabels[appointment.type] || appointment.type}
                             </Badge>
@@ -215,6 +219,7 @@ function AppointmentGroup({
           setSelectedAppointment(null);
           onUpdateAppointments?.();
         }}
+        onRegisterExternalPatient={onRegisterExternalPatient}
       />
     </div>
   );
@@ -255,6 +260,7 @@ type AppointmentListViewProps = {
   onCancelDay?: (date: string, appointmentIds?: string[]) => Promise<void>;
   onAddAppointment: VoidFunction;
   onUpdateAppointments?: VoidFunction;
+  onRegisterExternalPatient?: (data: ExternalPatientValues) => void;
 };
 
 export function AppointmentListView({
@@ -264,6 +270,7 @@ export function AppointmentListView({
   onCancelDay,
   onAddAppointment,
   onUpdateAppointments,
+  onRegisterExternalPatient,
 }: AppointmentListViewProps) {
   const now = dayjs();
   const today = now.format("YYYY-MM-DD");
@@ -360,6 +367,7 @@ export function AppointmentListView({
               onCancelDay={onCancelDay}
               onAddAppointment={onAddAppointment}
               onUpdateAppointments={onUpdateAppointments}
+              onRegisterExternalPatient={onRegisterExternalPatient}
             />
           </div>
         </div>

@@ -113,6 +113,11 @@ type NewPatientModalProps = {
   onSuccess?: VoidFunction;
   professional?: Professional;
   professionals?: Professional[];
+  initialValues?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
 };
 
 export default function NewPatientModal({
@@ -121,6 +126,7 @@ export default function NewPatientModal({
   professionals,
   setShowModal,
   onSuccess,
+  initialValues,
 }: NewPatientModalProps) {
   const [step, setStep] = useState<StepNumber>(1);
   const [addressVisible, setAddressVisible] = useState(false);
@@ -250,6 +256,14 @@ export default function NewPatientModal({
       if (!current) form.setValue("billing.total_amount", 0);
     }
   }, [isSplitBilling, showBilling]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: form is stable
+  useEffect(() => {
+    if (!showModal || !initialValues) return;
+    if (initialValues.name) form.setValue("name", initialValues.name);
+    if (initialValues.email) form.setValue("email", initialValues.email);
+    if (initialValues.phone) form.setValue("phone", initialValues.phone);
+  }, [showModal, initialValues?.name, initialValues?.email, initialValues?.phone]);
 
   // Adjust installments_dates length when count changes in custom mode
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional
