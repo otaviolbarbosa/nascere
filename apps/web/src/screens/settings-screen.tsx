@@ -120,7 +120,7 @@ function IntegrationItem({
             variant="ghost"
             onClick={onDisconnect}
             disabled={isLoading}
-            className="text-xs text-muted-foreground"
+            className="text-muted-foreground text-xs"
           >
             {isLoading ? "Desconectando..." : "Desconectar"}
           </Button>
