@@ -5,6 +5,7 @@ import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { createAppointmentSchema } from "@/lib/validations/appointment";
 import { createAppointment } from "@/services/appointment";
+import { syncCreateToGoogleCalendar } from "@/services/google-calendar";
 
 export const addAppointmentAction = authActionClient
   .inputSchema(createAppointmentSchema)
@@ -43,6 +44,11 @@ export const addAppointmentAction = authActionClient
         metadata: { appointment_id: appointment.id, type: parsedInput.type },
       });
     }
+
+    // Fire-and-forget — GCal failure must not break appointment creation
+    syncCreateToGoogleCalendar(appointment, user.id).catch((err) => {
+      console.error("[google-calendar] create sync failed", err);
+    });
 
     return { appointment };
   });

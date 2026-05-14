@@ -3,6 +3,7 @@
 import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
+import { syncUpdateToGoogleCalendar } from "@/services/google-calendar";
 import { z } from "zod";
 
 export const updateAppointmentAction = authActionClient
@@ -18,13 +19,22 @@ export const updateAppointmentAction = authActionClient
 
     if (error) throw new Error(error.message);
 
-    if (profile.enterprise_id) {
-      const { data: appointment } = await supabase
-        .from("appointments")
-        .select("patient_id, patient:patients(name)")
-        .eq("id", id)
-        .single();
-      const patient = appointment?.patient as { name: string } | null;
+    // Fetch updated row for GCal sync and activity log (single query for both)
+    const { data: updatedAppointment } = await supabase
+      .from("appointments")
+      .select("*, patient:patients(name)")
+      .eq("id", id)
+      .single();
+
+    if (updatedAppointment) {
+      // Fire-and-forget — GCal failure must not break update
+      syncUpdateToGoogleCalendar(updatedAppointment, user.id).catch((err) => {
+        console.error("[google-calendar] update sync failed", err);
+      });
+    }
+
+    if (profile.enterprise_id && updatedAppointment) {
+      const patient = updatedAppointment.patient as { name: string } | null;
 
       insertActivityLog({
         supabaseAdmin,
@@ -33,7 +43,7 @@ export const updateAppointmentAction = authActionClient
         actionType: "appointment",
         userId: user.id,
         enterpriseId: profile.enterprise_id,
-        patientId: appointment?.patient_id ?? null,
+        patientId: updatedAppointment.patient_id ?? null,
         metadata: { appointment_id: id },
       });
     }

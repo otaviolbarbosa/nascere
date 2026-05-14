@@ -1,4 +1,5 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
+import { createServerSupabaseAdmin } from "@ventre/supabase/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const type = searchParams.get("type");
+  const intent = searchParams.get("intent");
   const nextParam = searchParams.get("next") ?? "/home";
   const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/home";
 
@@ -36,9 +38,27 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Persist Google Calendar tokens when intent is google_calendar
+      if (intent === "google_calendar" && data.session?.provider_token) {
+        try {
+          const admin = await createServerSupabaseAdmin();
+          await admin.from("user_google_tokens").upsert(
+            {
+              user_id: data.session.user.id,
+              access_token: data.session.provider_token,
+              refresh_token: data.session.provider_refresh_token ?? undefined,
+              expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+            },
+            { onConflict: "user_id" },
+          );
+        } catch (tokenErr) {
+          console.error("[auth/callback] failed to persist google calendar tokens", tokenErr);
+        }
+      }
+
       // Handle password recovery
       if (type === "recovery") {
         return NextResponse.redirect(`${origin}/reset-password`);
