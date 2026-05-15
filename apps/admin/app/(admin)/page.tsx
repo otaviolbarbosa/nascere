@@ -38,7 +38,7 @@ export default async function DashboardPage() {
     <div>
       <div className="mb-8">
         <h1 className="font-bold text-2xl text-foreground">Dashboard</h1>
-        <p className="mt-1 text-muted-foreground text-sm">Visão geral da plataforma Nascere</p>
+        <p className="mt-1 text-muted-foreground text-sm">Visão geral da plataforma VentreApp</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

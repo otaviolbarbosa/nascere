@@ -27,7 +27,7 @@ export function SidebarNav() {
   return (
     <aside className="fixed top-0 left-0 flex h-screen w-60 flex-col border-border border-r bg-sidebar">
       <div className="flex h-16 items-center border-sidebar-border border-b px-6">
-        <span className="font-semibold text-lg text-sidebar-primary">Nascere Admin</span>
+        <span className="font-semibold text-lg text-sidebar-primary">VentreApp Admin</span>
       </div>
 
       <nav className="flex-1 space-y-1 px-3 py-4">

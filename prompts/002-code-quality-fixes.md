@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Corrigir os anti-patterns e más práticas identificados no diagnóstico de qualidade do projeto Nascere. As correções estão ordenadas por prioridade e agrupadas por tema para facilitar a execução sequencial.
+Corrigir os anti-patterns e más práticas identificados no diagnóstico de qualidade do projeto VentreApp. As correções estão ordenadas por prioridade e agrupadas por tema para facilitar a execução sequencial.
 
 ---
 
