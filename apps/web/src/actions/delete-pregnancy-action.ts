@@ -45,18 +45,18 @@ export const deletePregnancyAction = authActionClient
 
     if (profile.enterprise_id) {
       revalidateTag(`enterprise-patients-${profile.enterprise_id}`, { expire: 300 });
-      insertActivityLog({
-        supabaseAdmin,
-        actionName: "Gestante excluída",
-        description: pregnancy?.patient?.name
-          ? `Gestante ${pregnancy.patient.name} excluída`
-          : "Gestante excluída",
-        actionType: "patient",
-        userId: user.id,
-        enterpriseId: profile.enterprise_id,
-        metadata: { patient_id: parsedInput.patientId, pregnancy_id: pregnancy?.id },
-      });
     }
+    insertActivityLog({
+      supabaseAdmin,
+      actionName: "Gestante excluída",
+      description: pregnancy?.patient?.name
+        ? `Gestante ${pregnancy.patient.name} excluída`
+        : "Gestante excluída",
+      actionType: "patient",
+      userId: user.id,
+      enterpriseId: profile.enterprise_id,
+      metadata: { patient_id: parsedInput.patientId, pregnancy_id: pregnancy?.id },
+    });
 
     return { success: true };
   });
