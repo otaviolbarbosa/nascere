@@ -1,5 +1,5 @@
 "use client";
-import { deletePatientAction } from "@/actions/delete-patient-action";
+import { deletePregnancyAction } from "@/actions/delete-pregnancy-action";
 import { getPatientAction } from "@/actions/get-patient-action";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FinishCareModal } from "@/components/shared/finish-care-modal";
@@ -30,7 +30,7 @@ export default function PatientProfilePage() {
   const patientId = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
 
   const { execute: fetchPatient, result, isPending } = useAction(getPatientAction);
-  const { executeAsync: deletePatient } = useAction(deletePatientAction);
+  const { executeAsync: deletePregnancy } = useAction(deletePregnancyAction);
 
   useEffect(() => {
     fetchPatient({ patientId });
@@ -47,7 +47,7 @@ export default function PatientProfilePage() {
       confirmLabel: "Excluir",
       variant: "destructive",
       onConfirm: async () => {
-        const res = await deletePatient({ patientId });
+        const res = await deletePregnancy({ patientId });
         if (res?.serverError) {
           toast.error(res.serverError);
           return;

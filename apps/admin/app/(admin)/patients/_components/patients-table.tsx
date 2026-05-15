@@ -27,7 +27,7 @@ export function PatientsTable() {
       setTotalPages(data.pagination.total_pages);
     },
     onError: ({ error }) => {
-      toast.error(error.serverError ?? "Erro ao carregar pacientes");
+      toast.error(error.serverError ?? "Erro ao carregar gestantes");
     },
   });
 
