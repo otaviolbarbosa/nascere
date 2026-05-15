@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import { CheckCircle2, Calendar, Mail } from "lucide-react";
+import { Calendar, CheckCircle2, Mail } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -122,7 +122,7 @@ function IntegrationItem({
             disabled={isLoading}
             className="text-muted-foreground text-xs"
           >
-            {isLoading ? "Desconectando..." : "Desconectar"}
+            {isLoading ? "Aguarde..." : "Desconectar"}
           </Button>
         </div>
       ) : (
@@ -145,11 +145,14 @@ export default function SettingsScreen() {
   const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
   const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
 
-  const { execute: checkCalendarStatus } = useAction(getGoogleCalendarStatusAction, {
-    onSuccess: ({ data }) => {
-      if (data) setIsGoogleCalendarConnected(data.connected);
+  const { execute: checkCalendarStatus, isExecuting: isCheckingStatus } = useAction(
+    getGoogleCalendarStatusAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data) setIsGoogleCalendarConnected(data.connected);
+      },
     },
-  });
+  );
 
   const { execute: disconnectCalendar, isExecuting: isDisconnecting } = useAction(
     disconnectGoogleCalendarAction,
@@ -227,7 +230,7 @@ export default function SettingsScreen() {
                 : "Sincronize seus agendamentos com o Google Agenda"
             }
             isConnected={isGoogleCalendarConnected}
-            isLoading={isDisconnecting}
+            isLoading={isCheckingStatus || isDisconnecting}
             onConnect={connectGoogleCalendar}
             onDisconnect={() => disconnectCalendar()}
           />
