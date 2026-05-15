@@ -1,7 +1,5 @@
+import type { Appointment, Patient } from "@/types";
 import { createServerSupabaseAdmin } from "@ventre/supabase/server";
-import type { Tables } from "@ventre/supabase/types";
-
-type Appointment = Tables<"appointments">;
 
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -56,16 +54,16 @@ export async function getValidGoogleAccessToken(userId: string): Promise<string 
   return access_token;
 }
 
-function buildEventPayload(appointment: Appointment) {
+function buildEventPayload(appointment: Appointment, patient: Patient) {
   // appointment.time is stored as "HH:MM:SS" by PostgreSQL
   const startISO = `${appointment.date}T${appointment.time}`;
   const startDate = new Date(`${startISO}-03:00`);
   const endDate = new Date(startDate.getTime() + (appointment.duration ?? 60) * 60_000);
-  const patientName = appointment.external_patient_name ?? "Paciente";
+  const patientName = patient.name ?? appointment.external_patient_name ?? "Paciente";
   const typePt = appointment.type === "consulta" ? "Consulta" : "Encontro";
 
   return {
-    summary: `${typePt} — ${patientName}`,
+    summary: `[VentreApp] ${typePt} com ${patientName}`,
     description: appointment.notes ?? undefined,
     location: appointment.location ?? undefined,
     start: { dateTime: startDate.toISOString(), timeZone: TIMEZONE },
@@ -76,6 +74,7 @@ function buildEventPayload(appointment: Appointment) {
 export async function createGoogleCalendarEvent(
   accessToken: string,
   appointment: Appointment,
+  patient: Patient,
 ): Promise<string> {
   const res = await fetch(CALENDAR_API, {
     method: "POST",
@@ -83,7 +82,7 @@ export async function createGoogleCalendarEvent(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(buildEventPayload(appointment)),
+    body: JSON.stringify(buildEventPayload(appointment, patient)),
   });
   if (!res.ok) throw new Error(`GCal create failed: ${res.status}`);
   const event = (await res.json()) as { id: string };
@@ -94,6 +93,7 @@ export async function updateGoogleCalendarEvent(
   accessToken: string,
   eventId: string,
   appointment: Appointment,
+  patient: Patient,
 ): Promise<void> {
   const res = await fetch(`${CALENDAR_API}/${eventId}`, {
     method: "PATCH",
@@ -101,7 +101,7 @@ export async function updateGoogleCalendarEvent(
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(buildEventPayload(appointment)),
+    body: JSON.stringify(buildEventPayload(appointment, patient)),
   });
   if (!res.ok) throw new Error(`GCal update failed: ${res.status}`);
 }
@@ -120,12 +120,13 @@ export async function deleteGoogleCalendarEvent(
 
 export async function syncCreateToGoogleCalendar(
   appointment: Appointment,
+  patient: Patient,
   userId: string,
 ): Promise<void> {
   const accessToken = await getValidGoogleAccessToken(userId);
   if (!accessToken) return;
 
-  const eventId = await createGoogleCalendarEvent(accessToken, appointment);
+  const eventId = await createGoogleCalendarEvent(accessToken, appointment, patient);
 
   const supabase = await createServerSupabaseAdmin();
   await supabase.from("appointments").update({ google_event_id: eventId }).eq("id", appointment.id);
@@ -133,6 +134,7 @@ export async function syncCreateToGoogleCalendar(
 
 export async function syncUpdateToGoogleCalendar(
   appointment: Appointment,
+  patient: Patient,
   userId: string,
 ): Promise<void> {
   if (!appointment.google_event_id) return;
@@ -140,7 +142,7 @@ export async function syncUpdateToGoogleCalendar(
   const accessToken = await getValidGoogleAccessToken(userId);
   if (!accessToken) return;
 
-  await updateGoogleCalendarEvent(accessToken, appointment.google_event_id, appointment);
+  await updateGoogleCalendarEvent(accessToken, appointment.google_event_id, appointment, patient);
 }
 
 export async function syncDeleteToGoogleCalendar(

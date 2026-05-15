@@ -6,6 +6,7 @@ import { authActionClient } from "@/lib/safe-action";
 import { createAppointmentSchema } from "@/lib/validations/appointment";
 import { createAppointment } from "@/services/appointment";
 import { syncCreateToGoogleCalendar } from "@/services/google-calendar";
+import type { Patient } from "@/types";
 
 export const addAppointmentAction = authActionClient
   .inputSchema(createAppointmentSchema)
@@ -14,18 +15,20 @@ export const addAppointmentAction = authActionClient
       isStaff(profile) && parsedInput.professional_id ? parsedInput.professional_id : user.id;
     const appointment = await createAppointment(supabaseAdmin, professionalId, parsedInput);
 
+    let patientName: string | null = "";
     if (profile.enterprise_id) {
       const isConsulta = parsedInput.type === "consulta";
       const actionName = isConsulta ? "Nova consulta agendada" : "Novo encontro agendado";
       const typeLabel = isConsulta ? "Consulta pré-natal" : "Encontro preparatório";
 
-      let patientName: string | null = parsedInput.external_patient_name ?? null;
+      patientName = parsedInput.external_patient_name ?? null;
       if (!parsedInput.is_external && appointment.patient_id) {
         const { data: patient } = await supabase
           .from("patients")
           .select("name")
           .eq("id", appointment.patient_id)
           .single();
+
         patientName = patient?.name ?? null;
       }
 
@@ -46,7 +49,11 @@ export const addAppointmentAction = authActionClient
     }
 
     // Fire-and-forget — GCal failure must not break appointment creation
-    syncCreateToGoogleCalendar(appointment, user.id).catch((err) => {
+    syncCreateToGoogleCalendar(
+      appointment,
+      { id: appointment.patient_id, name: patientName } as Patient,
+      user.id,
+    ).catch((err) => {
       console.error("[google-calendar] create sync failed", err);
     });
 
