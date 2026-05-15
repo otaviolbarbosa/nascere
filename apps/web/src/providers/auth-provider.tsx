@@ -22,6 +22,7 @@ interface AuthContextType {
   signOut: () => Promise<{ error: unknown }>;
   resetPassword: (email: string) => Promise<{ data: unknown; error: unknown }>;
   signInWithGoogle: (redirectTo?: string) => Promise<{ data: unknown; error: unknown }>;
+  connectGoogleCalendar: () => Promise<void>;
   isAuthenticated: boolean;
   isProfessional: boolean;
   isObstetrician: boolean;
@@ -131,6 +132,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { data, error };
   };
 
+  const connectGoogleCalendar = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        scopes: "https://www.googleapis.com/auth/calendar.events",
+        queryParams: { access_type: "offline", prompt: "consent" },
+        redirectTo: `${window.location.origin}/auth/callback?next=/profile/settings&intent=google_calendar`,
+      },
+    });
+  };
+
   const value: AuthContextType = {
     user,
     profile,
@@ -140,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     resetPassword,
     signInWithGoogle,
+    connectGoogleCalendar,
     isAuthenticated: !!user,
     isProfessional: isProfessional(profile),
     isObstetrician: isProfessional(profile) && profile?.professional_type === "obstetra",

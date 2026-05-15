@@ -1,4 +1,4 @@
-# nascere-app - PRD Módulo Financeiro
+# ventre-app - PRD Módulo Financeiro
 
 ## Objetivo
 Gerenciar informações financeiras e pagamentos entre profissionais de saúde e gestantes, incluindo registro de valores, formas de pagamento, parcelamentos, vencimentos e envio de notificações de lembrete. **Importante:** O sistema não processa cobranças automaticamente, apenas gerencia e rastreia informações de pagamento.
@@ -2133,7 +2133,7 @@ SMTP_HOST="..."
 SMTP_PORT="587"
 SMTP_USER="..."
 SMTP_PASSWORD="..."
-SMTP_FROM="noreply@nascere.app"
+SMTP_FROM="noreply@ventre.app"
 ```
 
 ## Estrutura de Diretórios Atualizada
@@ -2214,4 +2214,4 @@ SMTP_FROM="noreply@nascere.app"
 
 **Versão:** 1.0  
 **Data:** Fevereiro 2026  
-**Autor:** Equipe nascere-app
+**Autor:** Equipe ventre-app

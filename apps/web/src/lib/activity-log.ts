@@ -16,7 +16,7 @@ type InsertActivityLogParams = {
   description: string;
   actionType: ActionType;
   userId: string;
-  enterpriseId: string;
+  enterpriseId: string | null;
   patientId?: string | null;
   metadata?: Record<string, unknown>;
 };

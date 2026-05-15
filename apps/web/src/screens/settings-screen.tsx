@@ -1,11 +1,16 @@
 "use client";
 
+import {
+  disconnectGoogleCalendarAction,
+  getGoogleCalendarStatusAction,
+} from "@/actions/disconnect-google-calendar-action";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@ventre/supabase";
 import { Badge } from "@ventre/ui/badge";
 import { Button } from "@ventre/ui/button";
-import { CheckCircle2, Mail } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, Calendar, Mail } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 function GoogleIcon() {
@@ -71,9 +76,97 @@ function AuthItem({ icon, label, isEnabled, onEnable, isLoading }: AuthItemProps
   );
 }
 
+type IntegrationItemProps = {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  isConnected: boolean;
+  isLoading?: boolean;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+};
+
+function IntegrationItem({
+  icon,
+  label,
+  description,
+  isConnected,
+  isLoading,
+  onConnect,
+  onDisconnect,
+}: IntegrationItemProps) {
+  return (
+    <div className="flex items-center justify-between py-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background">
+          {icon}
+        </div>
+        <div>
+          <p className="font-medium text-sm">{label}</p>
+          <p className="text-muted-foreground text-xs">{description}</p>
+        </div>
+      </div>
+      {isConnected ? (
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="gap-1.5 border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Ativo
+          </Badge>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onDisconnect}
+            disabled={isLoading}
+            className="text-muted-foreground text-xs"
+          >
+            {isLoading ? "Desconectando..." : "Desconectar"}
+          </Button>
+        </div>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onConnect}
+          disabled={isLoading}
+          className="text-xs"
+        >
+          {isLoading ? "Conectando..." : "Conectar"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsScreen() {
-  const { user } = useAuth();
+  const { user, connectGoogleCalendar } = useAuth();
   const [isLinkingGoogle, setIsLinkingGoogle] = useState(false);
+  const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
+
+  const { execute: checkCalendarStatus } = useAction(getGoogleCalendarStatusAction, {
+    onSuccess: ({ data }) => {
+      if (data) setIsGoogleCalendarConnected(data.connected);
+    },
+  });
+
+  const { execute: disconnectCalendar, isExecuting: isDisconnecting } = useAction(
+    disconnectGoogleCalendarAction,
+    {
+      onSuccess: () => {
+        setIsGoogleCalendarConnected(false);
+        toast.success("Google Agenda desconectado");
+      },
+      onError: () => {
+        toast.error("Erro ao desconectar Google Agenda");
+      },
+    },
+  );
+
+  useEffect(() => {
+    checkCalendarStatus();
+  }, [checkCalendarStatus]);
 
   const hasGoogleIdentity = user?.identities?.some((i) => i.provider === "google") ?? false;
   const hasEmailIdentity = user?.identities?.some((i) => i.provider === "email") ?? !!user?.email;
@@ -97,7 +190,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <div className="flex flex-col px-4 py-6">
+    <div className="flex flex-col gap-4 px-4 py-6">
       <div className="rounded-xl border bg-card p-4">
         <h2 className="mb-1 font-semibold text-base">Autenticação</h2>
         <p className="mb-4 text-muted-foreground text-sm">
@@ -115,6 +208,28 @@ export default function SettingsScreen() {
             isEnabled={hasGoogleIdentity}
             onEnable={handleLinkGoogle}
             isLoading={isLinkingGoogle}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-card p-4">
+        <h2 className="mb-1 font-semibold text-base">Integrações</h2>
+        <p className="mb-4 text-muted-foreground text-sm">
+          Conecte serviços externos para sincronizar seus dados
+        </p>
+        <div className="divide-y">
+          <IntegrationItem
+            icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+            label="Google Agenda"
+            description={
+              isGoogleCalendarConnected
+                ? "Agendamentos sincronizados automaticamente"
+                : "Sincronize seus agendamentos com o Google Agenda"
+            }
+            isConnected={isGoogleCalendarConnected}
+            isLoading={isDisconnecting}
+            onConnect={connectGoogleCalendar}
+            onDisconnect={() => disconnectCalendar()}
           />
         </div>
       </div>

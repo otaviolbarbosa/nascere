@@ -140,8 +140,8 @@ export default function BottomNav() {
   const isOverflowActive = overflowNav.some((item) => item.isActive) || isProfileActive;
 
   return (
-    <div className="fixed bottom-0 z-50 w-full px-2 py-4 sm:hidden">
-      <div ref={moreRef} className="relative">
+    <div className="fixed bottom-0 z-50 flex w-full justify-center px-2 py-4 md:hidden">
+      <div ref={moreRef} className="relative w-full max-w-[420px]">
         <div
           className={cn(
             "-mr-1.5 absolute right-2 bottom-full mb-2 flex flex-col gap-1.5 rounded-[2rem] border border-white bg-primary/10 p-2.5 shadow-md shadow-primary/10 backdrop-blur-md transition-opacity duration-300",
