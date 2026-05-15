@@ -133,6 +133,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const connectGoogleCalendar = async () => {
+    // Clear stale PKCE code verifier from any previous failed OAuth attempt
+    for (const cookie of document.cookie.split(";")) {
+      const name = cookie.trim().split("=")[0];
+      if (name?.includes("code-verifier")) {
+        document.cookie = `${name}=; Max-Age=0; path=/`;
+      }
+    }
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

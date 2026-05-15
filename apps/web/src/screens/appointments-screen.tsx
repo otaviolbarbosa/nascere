@@ -16,13 +16,15 @@ import type { AppointmentWithPatient } from "@/services/appointment";
 import type { EnterpriseProfessional } from "@/services/professional";
 import type { Tables } from "@ventre/supabase";
 import { Button } from "@ventre/ui/button";
-import { CalendarPlus, Plus } from "lucide-react";
+import { CalendarPlus, CalendarSync, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type AppointmentsScreenProps = {
   appointments: AppointmentWithPatient[];
   isStaff?: boolean;
+  isGoogleCalendarConnected?: boolean;
 };
 
 type AgendaView = "list" | "calendar";
@@ -32,6 +34,7 @@ type Patient = Tables<"patients">;
 export default function AppointmentsScreen({
   appointments: initialAppointments,
   isStaff = false,
+  isGoogleCalendarConnected = true,
 }: AppointmentsScreenProps) {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
@@ -110,6 +113,20 @@ export default function AppointmentsScreen({
   return (
     <div>
       <Header title="Agenda" />
+      {!isGoogleCalendarConnected && (
+        <div className="mx-4 mb-2 flex justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm md:mx-6 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+          <div className="flex items-center gap-3">
+            <CalendarSync className="h-4 w-4 shrink-0" />
+            <span>Sincronize seus agendamentos com a sua agenda do Google. </span>
+          </div>
+          <Link
+            href="/profile/settings"
+            className="font-medium underline underline-offset-2 hover:no-underline"
+          >
+            Sincronizar com a Agenda do Google
+          </Link>
+        </div>
+      )}
       <div className="space-y-4 p-4 pt-0 md:p-6 md:pt-0">
         {isStaff && professionals.length > 0 && (
           <ProfessionalsSelector

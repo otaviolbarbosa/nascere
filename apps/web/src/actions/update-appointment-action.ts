@@ -4,6 +4,7 @@ import { insertActivityLog } from "@/lib/activity-log";
 import { authActionClient } from "@/lib/safe-action";
 import { updateAppointmentSchema } from "@/lib/validations/appointment";
 import { syncUpdateToGoogleCalendar } from "@/services/google-calendar";
+import type { Patient } from "@/types";
 import { z } from "zod";
 
 export const updateAppointmentAction = authActionClient
@@ -28,7 +29,11 @@ export const updateAppointmentAction = authActionClient
 
     if (updatedAppointment) {
       // Fire-and-forget — GCal failure must not break update
-      syncUpdateToGoogleCalendar(updatedAppointment, user.id).catch((err) => {
+      syncUpdateToGoogleCalendar(
+        updatedAppointment,
+        { name: updatedAppointment.patient?.name } as Patient,
+        user.id,
+      ).catch((err) => {
         console.error("[google-calendar] update sync failed", err);
       });
     }
