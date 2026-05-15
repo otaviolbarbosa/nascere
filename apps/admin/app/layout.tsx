@@ -11,8 +11,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Nascere Admin",
-  description: "Painel administrativo do Nascere",
+  title: "VentreApp Admin",
+  description: "Painel administrativo do VentreApp",
 };
 
 export default function RootLayout({

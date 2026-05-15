@@ -38,7 +38,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="font-bold text-2xl text-foreground">Nascere Admin</h1>
+          <h1 className="font-bold text-2xl text-foreground">VentreApp Admin</h1>
           <p className="mt-2 text-muted-foreground text-sm">
             Faça login para acessar o painel administrativo
           </p>
