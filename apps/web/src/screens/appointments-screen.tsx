@@ -114,8 +114,8 @@ export default function AppointmentsScreen({
     <div>
       <Header title="Agenda" />
       {!isGoogleCalendarConnected && (
-        <div className="mx-4 mb-2 flex justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm md:mx-6 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-          <div className="flex items-center gap-3">
+        <div className="mx-4 mb-2 flex flex-col justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm md:mx-6 md:flex-row dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+          <div className="flex items-center gap-2">
             <CalendarSync className="h-4 w-4 shrink-0" />
             <span>Sincronize seus agendamentos com a sua agenda do Google. </span>
           </div>
@@ -123,7 +123,7 @@ export default function AppointmentsScreen({
             href="/profile/settings"
             className="font-medium underline underline-offset-2 hover:no-underline"
           >
-            Sincronizar com a Agenda do Google
+            Clique aqui para sincronizar
           </Link>
         </div>
       )}
