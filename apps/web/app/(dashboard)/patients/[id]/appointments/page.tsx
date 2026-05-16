@@ -2,6 +2,7 @@
 import { cancelDayAppointmentsAction } from "@/actions/cancel-day-appointments-action";
 import { getAppointmentsAction } from "@/actions/get-appointments-action";
 import { getPatientsAction } from "@/actions/get-patients-action";
+import { getGoogleCalendarStatusAction } from "@/actions/disconnect-google-calendar-action";
 import { AppointmentCalendarView } from "@/components/shared/appointment-calendar-view";
 import { AppointmentListView } from "@/components/shared/appointment-list-view";
 import { CalendarSwitcher } from "@/components/shared/calendar-switcher";
@@ -10,8 +11,9 @@ import NewAppointmentModal from "@/modals/new-appointment-modal";
 import type { AppointmentWithPatient } from "@/services/appointment";
 import type { Tables } from "@ventre/supabase/types";
 import { Button } from "@ventre/ui/button";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, CalendarSync } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -38,11 +40,17 @@ export default function PatientAppointmentsPage() {
   } = useAction(getAppointmentsAction);
   const { execute: fetchPatients, result: patientsResult } = useAction(getPatientsAction);
   const { executeAsync: cancelDay } = useAction(cancelDayAppointmentsAction);
+  const { execute: checkCalendarStatus, result: calendarStatusResult } = useAction(
+    getGoogleCalendarStatusAction,
+  );
 
   useEffect(() => {
     fetchAppointments({ patientId });
     fetchPatients();
-  }, [fetchAppointments, fetchPatients, patientId]);
+    checkCalendarStatus();
+  }, [fetchAppointments, fetchPatients, checkCalendarStatus, patientId]);
+
+  const isGoogleCalendarConnected = calendarStatusResult.data?.connected ?? true;
 
   const appointments = (appointmentsResult.data?.appointments ?? []) as AppointmentWithPatient[];
   const patients = (patientsResult.data?.patients ?? []) as Patient[];
@@ -80,6 +88,20 @@ export default function PatientAppointmentsPage() {
 
   return (
     <>
+      {!isGoogleCalendarConnected && (
+        <div className="mb-4 flex flex-col justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 md:flex-row dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+          <div className="flex items-center gap-2">
+            <CalendarSync className="h-4 w-4 shrink-0" />
+            <span>Sincronize seus agendamentos com a sua agenda do Google. </span>
+          </div>
+          <Link
+            href="/profile/settings"
+            className="font-medium underline underline-offset-2 hover:no-underline"
+          >
+            Clique aqui para sincronizar
+          </Link>
+        </div>
+      )}
       {agendaView === "calendar" ? (
         <AppointmentCalendarView
           appointments={appointments}
